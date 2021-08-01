@@ -1,6 +1,6 @@
-# Touhou Danmakufu ph3sx-zlabel
+# Touhou Danmakufu ph3sx-soup
 
-A fork of **Touhou Danmakufu ph3sx**, which is in turn a fork of **Touhou Danmakufu ph3**.
-This is my personal coding sandbox, so expect the unexpected, I guess. (Or expect nothing at all. That works too)
+A fork of **Touhou Danmakufu ph3sx zlabel**, which is a fork of **Touhou Danmakufu ph3sx**, which is in turn a fork of **Touhou Danmakufu ph3**.
+This is intended primarily for experimental use, but also for development in collaboration with that of of ph3sx zlabel (and in turn ph3sx).
 
 For credits, please refer to the original ph3sx repository.
