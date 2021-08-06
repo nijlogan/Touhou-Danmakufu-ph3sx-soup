@@ -776,6 +776,7 @@ bool DxSoundObject::Load(const std::wstring& path) {
 
 	player_ = nullptr;
 
+	//A very ugly hack
 	auto itrFind = mapCachedPlayers_.find(path);
 	bool bFound = itrFind != mapCachedPlayers_.end();
 	if (bFound) {
@@ -785,7 +786,7 @@ bool DxSoundObject::Load(const std::wstring& path) {
 		else
 			mapCachedPlayers_.erase(itrFind);
 	}
-
+	
 	if (player_ == nullptr) {
 		shared_ptr<SoundSourceData> newSource = manager->GetSoundSource(path, true);
 		if (newSource)
