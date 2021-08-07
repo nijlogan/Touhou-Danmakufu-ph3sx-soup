@@ -336,6 +336,7 @@ ScriptClientBase::ScriptClientBase() {
 	{
 		definedMacro_[L"_DNH_PH3SX_"] = L"";
 		definedMacro_[L"_DNH_PH3SX_ZLABEL_"] = L"";
+		definedMacro_[L"_DNH_PH3SX_SOUP_"] = L"";
 	}
 
 	Reset();
