@@ -465,6 +465,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjShot_SetGrazeInvalidFrame", StgStageScript::Func_ObjShot_SetGrazeInvalidFrame, 2 },
 	{ "ObjShot_SetGrazeFrame", StgStageScript::Func_ObjShot_SetGrazeFrame, 2 },
 	{ "ObjShot_IsValidGraze", StgStageScript::Func_ObjShot_IsValidGraze, 1 },
+	{ "ObjShot_SetFixedAngle", StgStageScript::Func_ObjShot_SetFixedAngle, 2 },
 	{ "ObjShot_SetSpinAngularVelocity", StgStageScript::Func_ObjShot_SetSpinAngularVelocity, 2 },
 	{ "ObjShot_SetDelayAngularVelocity", StgStageScript::Func_ObjShot_SetDelayAngularVelocity, 2 },
 
@@ -554,10 +555,6 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjCol_GetIntersectedCount", StgStageScript::Func_ObjCol_GetIntersectedCount, 1 },
 };
 static const std::vector<constant> stgStageConstant = {
-	//Screen sizes
-	//constant("SCREEN_WIDTH", 640),
-	//constant("SCREEN_HEIGHT", 480),
-
 	constant("TYPE_ALL", StgStageScript::TYPE_ALL),
 	constant("TYPE_SHOT", StgStageScript::TYPE_SHOT),
 	constant("TYPE_CHILD", StgStageScript::TYPE_CHILD),
@@ -724,14 +721,6 @@ StgStageScript::StgStageScript(StgStageController* stageController) : StgControl
 	typeScript_ = TYPE_STAGE;
 	_AddFunction(&stgStageFunction);
 	_AddConstant(&stgStageConstant);
-
-	{
-		const std::vector<constant> stgStageConstantsEx = {
-			constant("SCREEN_WIDTH", DirectGraphics::GetBase()->GetScreenWidth()),
-			constant("SCREEN_HEIGHT", DirectGraphics::GetBase()->GetScreenHeight()),
-		};
-		_AddConstant(&stgStageConstantsEx);
-	}
 
 	ref_count_ptr<StgStageInformation> info = stageController_->GetStageInformation();
 	mt_ = info->GetRandProvider();
@@ -4022,6 +4011,15 @@ gstd::value StgStageScript::Func_ObjShot_IsValidGraze(gstd::script_machine* mach
 		res = obj->IsValidGraze();
 
 	return script->CreateBooleanValue(res);
+}
+gstd::value StgStageScript::Func_ObjShot_SetFixedAngle(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	if (StgNormalShotObject* obj = dynamic_cast<StgNormalShotObject*>(script->GetObjectPointer(id))) {
+		bool bFix = argv[1].as_boolean();
+		obj->SetFixedAngle(bFix);
+	}
+	return value();
 }
 gstd::value StgStageScript::Func_ObjShot_SetSpinAngularVelocity(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;
