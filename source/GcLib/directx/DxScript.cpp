@@ -87,6 +87,7 @@ static const std::vector<function> dxFunction = {
 	{ "GetMouseState", DxScript::Func_GetMouseState, 1 },
 	{ "GetVirtualKeyState", DxScript::Func_GetVirtualKeyState, 1 },
 	{ "SetVirtualKeyState", DxScript::Func_SetVirtualKeyState, 2 },
+	{ "GetVirtualKeyMapping", DxScript::Func_GetVirtualKeyMapping, 1 },
 
 	//Graphics functions
 	{ "GetMonitorWidth", DxScript::Func_GetMonitorWidth, 0 },
@@ -101,6 +102,7 @@ static const std::vector<function> dxFunction = {
 	{ "LoadTextureEx", DxScript::Func_LoadTextureEx, 3 },
 	{ "LoadTextureInLoadThread", DxScript::Func_LoadTextureInLoadThread, 1 },
 	{ "LoadTextureInLoadThreadEx", DxScript::Func_LoadTextureInLoadThreadEx, 3 },
+	{ "IsLoadThreadLoading", DxScript::Func_IsLoadThreadLoading, 0 },
 	{ "RemoveTexture", DxScript::Func_RemoveTexture, 1 },
 	{ "GetTextureWidth", DxScript::Func_GetTextureWidth, 1 },
 	{ "GetTextureHeight", DxScript::Func_GetTextureHeight, 1 },
@@ -223,6 +225,7 @@ static const std::vector<function> dxFunction = {
 	{ "ColorHexToARGB", DxScript::Func_ColorHexToARGB, 1 },
 	{ "ColorHexToARGB", DxScript::Func_ColorHexToARGB, 2 },		//Overloaded
 	{ "ColorRGBtoHSV", DxScript::Func_ColorRGBtoHSV, 3 },
+	{ "ColorHexRGBtoHSV", DxScript::Func_ColorHexRGBtoHSV, 1 },
 	{ "ColorHSVtoRGB", DxScript::Func_ColorHSVtoRGB, 3 },
 	{ "ColorHSVtoHexRGB", DxScript::Func_ColorHSVtoHexRGB, 3 },
 
@@ -230,7 +233,9 @@ static const std::vector<function> dxFunction = {
 	{ "SetInvalidPositionReturn", DxScript::Func_SetInvalidPositionReturn, 2 },
 
 	//Base object functions
+	{ "Obj_Create", DxScript::Func_Obj_Create, 0 },
 	{ "Obj_Delete", DxScript::Func_Obj_Delete, 1 },
+	{ "Obj_QueueDelete", DxScript::Func_Obj_QueueDelete, 1 },
 	{ "Obj_IsDeleted", DxScript::Func_Obj_IsDeleted, 1 },
 	{ "Obj_IsExists", DxScript::Func_Obj_IsExists, 1 },
 	{ "Obj_SetVisible", DxScript::Func_Obj_SetVisible, 2 },
@@ -239,20 +244,28 @@ static const std::vector<function> dxFunction = {
 	{ "Obj_SetRenderPriorityI", DxScript::Func_Obj_SetRenderPriorityI, 2 },
 	{ "Obj_GetRenderPriority", DxScript::Func_Obj_GetRenderPriority, 1 },
 	{ "Obj_GetRenderPriorityI", DxScript::Func_Obj_GetRenderPriorityI, 1 },
+
 	{ "Obj_GetValue", DxScript::Func_Obj_GetValue, 2 },
-	{ "Obj_GetValueD", DxScript::Func_Obj_GetValueD, 3 },
+	{ "Obj_GetValue", DxScript::Func_Obj_GetValue, 3 },
+	{ "Obj_GetValueD", DxScript::Func_Obj_GetValue, 3 },
 	{ "Obj_SetValue", DxScript::Func_Obj_SetValue, 3 },
 	{ "Obj_DeleteValue", DxScript::Func_Obj_DeleteValue, 2 },
 	{ "Obj_IsValueExists", DxScript::Func_Obj_IsValueExists, 2 },
 
 	{ "Obj_GetValueI", DxScript::Func_Obj_GetValueI, 2 },
-	{ "Obj_GetValueDI", DxScript::Func_Obj_GetValueDI, 3 },
+	{ "Obj_GetValueI", DxScript::Func_Obj_GetValueI, 3 },
+	{ "Obj_GetValueDI", DxScript::Func_Obj_GetValueI, 3 },
 	{ "Obj_SetValueI", DxScript::Func_Obj_SetValueI, 3 },
 	{ "Obj_DeleteValueI", DxScript::Func_Obj_DeleteValueI, 2 },
 	{ "Obj_IsValueExistsI", DxScript::Func_Obj_IsValueExistsI, 2 },
 
 	{ "Obj_CopyValueTable", DxScript::Func_Obj_CopyValueTable, 3 },
+	{ "Obj_GetExistFrame", DxScript::Func_Obj_GetExistFrame, 1 },
 	{ "Obj_GetType", DxScript::Func_Obj_GetType, 1 },
+	{ "Obj_GetParentScriptID", DxScript::Func_Obj_GetParentScriptID, 1 },
+	{ "Obj_SetNewParentScript", DxScript::Func_Obj_SetNewParentScript, 1 },
+	{ "Obj_SetNewParentScript", DxScript::Func_Obj_SetNewParentScript, 2 }, //Overloaded
+	{ "Obj_SetAutoDelete", DxScript::Func_Obj_SetAutoDelete, 2 },
 
 	//Render object functions
 	{ "ObjRender_SetX", DxScript::Func_ObjRender_SetX, 2 },
@@ -312,6 +325,7 @@ static const std::vector<function> dxFunction = {
 	{ "ObjShader_Create", DxScript::Func_ObjShader_Create, 0 },
 	{ "ObjShader_SetShaderF", DxScript::Func_ObjShader_SetShaderF, 2 },
 	{ "ObjShader_SetShaderO", DxScript::Func_ObjShader_SetShaderO, 2 },
+	{ "ObjShader_SetShaderT", DxScript::Func_ObjShader_SetShaderT, 3 },
 	{ "ObjShader_ResetShader", DxScript::Func_ObjShader_ResetShader, 1 },
 	{ "ObjShader_SetTechnique", DxScript::Func_ObjShader_SetTechnique, 2 },
 	{ "ObjShader_SetMatrix", DxScript::Func_ObjShader_SetMatrix, 3 },
@@ -421,12 +435,15 @@ static const std::vector<function> dxFunction = {
 	{ "ObjText_SetMaxHeight", DxScript::Func_ObjText_SetMaxHeight, 2 },
 	{ "ObjText_SetLinePitch", DxScript::Func_ObjText_SetLinePitch, 2 },
 	{ "ObjText_SetSidePitch", DxScript::Func_ObjText_SetSidePitch, 2 },
+	{ "ObjText_SetFixedWidth", DxScript::Func_ObjText_SetFixedWidth, 2 },
 	{ "ObjText_SetVertexColor", DxScript::Func_ObjText_SetVertexColor, 5 },
 	{ "ObjText_SetVertexColor", DxScript::Func_ObjText_SetVertexColor, 2 },				//Overloaded
 	{ "ObjText_SetTransCenter", DxScript::Func_ObjText_SetTransCenter, 3 },
 	{ "ObjText_SetAutoTransCenter", DxScript::Func_ObjText_SetAutoTransCenter, 2 },
 	{ "ObjText_SetHorizontalAlignment", DxScript::Func_ObjText_SetHorizontalAlignment, 2 },
+	{ "ObjText_SetVerticalAlignment", DxScript::Func_ObjText_SetVerticalAlignment, 2 },
 	{ "ObjText_SetSyntacticAnalysis", DxScript::Func_ObjText_SetSyntacticAnalysis, 2 },
+	{ "ObjText_GetText", DxScript::Func_ObjText_GetText, 1 },
 	{ "ObjText_GetTextLength", DxScript::Func_ObjText_GetTextLength, 1 },
 	{ "ObjText_GetTextLengthCU", DxScript::Func_ObjText_GetTextLengthCU, 1 },
 	{ "ObjText_GetTextLengthCUL", DxScript::Func_ObjText_GetTextLengthCUL, 1 },
@@ -494,6 +511,7 @@ static const std::vector<function> dxFunction = {
 static const std::vector<constant> dxConstant = {
 	//Object types
 	constant("ID_INVALID", DxScript::ID_INVALID),
+	constant("OBJ_BASE", (int)TypeObject::Base),
 	constant("OBJ_PRIMITIVE_2D", (int)TypeObject::Primitive2D),
 	constant("OBJ_SPRITE_2D", (int)TypeObject::Sprite2D),
 	constant("OBJ_SPRITE_LIST_2D", (int)TypeObject::SpriteList2D),
@@ -769,8 +787,8 @@ DxScript::DxScript() {
 	{
 		DirectGraphics* graphics = DirectGraphics::GetBase();
 		const std::vector<constant> dxConstant2 = {
-			constant("SCREEN_WIDTH", graphics->GetScreenWidth()),
-			constant("SCREEN_HEIGHT", graphics->GetScreenHeight()),
+			constant("SCREEN_WIDTH", (int64_t)graphics->GetScreenWidth()),
+			constant("SCREEN_HEIGHT", (int64_t)graphics->GetScreenHeight()),
 		};
 		_AddConstant(&dxConstant2);
 	}
@@ -1162,6 +1180,21 @@ gstd::value DxScript::Func_SetVirtualKeyState(gstd::script_machine* machine, int
 	}
 	return value();
 }
+gstd::value DxScript::Func_GetVirtualKeyMapping(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	int16_t key_pad[2] = { -1, -1 };
+
+	VirtualKeyManager* input = dynamic_cast<VirtualKeyManager*>(DirectInput::GetBase());
+	if (input) {
+		int16_t key = (int16_t)argv[0].as_int();
+		if (auto pKey = input->GetVirtualKey(key)) {
+			key_pad[0] = pKey->GetKeyCode();
+			key_pad[1] = pKey->GetPadButton();
+		}
+	}
+
+	return DxScript::CreateIntArrayValue(key_pad, 2U);
+}
+
 //Dx関数：描画系
 gstd::value DxScript::Func_GetMonitorWidth(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	LONG res = ::GetSystemMetrics(SM_CXSCREEN);
@@ -1196,6 +1229,15 @@ gstd::value DxScript::Func_IsFullscreenMode(gstd::script_machine* machine, int a
 	bool res = graphics->GetScreenMode() == ScreenMode::SCREENMODE_FULLSCREEN;
 	return DxScript::CreateBooleanValue(res);
 }
+value DxScript::Func_GetCoordinateScalingFactor(gstd::script_machine* machine, int argc, const value* argv) {
+	return DxScript::CreateRealValue(DirectGraphics::g_dxCoordsMul_);
+}
+value DxScript::Func_SetCoordinateScalingFactor(gstd::script_machine* machine, int argc, const value* argv) {
+	if (DirectGraphics::GetBase()->GetConfigData().bUseDynamicScaling_)
+		DirectGraphics::g_dxCoordsMul_ = argv[0].as_real();
+	return value();
+}
+
 value DxScript::Func_LoadTexture(script_machine* machine, int argc, const value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	
@@ -1274,6 +1316,14 @@ value DxScript::Func_LoadTextureInLoadThreadEx(script_machine* machine, int argc
 			mapTexture[path] = texture;
 		}
 	}
+	return script->CreateBooleanValue(res);
+}
+value DxScript::Func_IsLoadThreadLoading(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+
+	shared_ptr<FileManager::LoadThread> thread = FileManager::GetBase()->GetLoadThread();
+	bool res = !thread->IsThreadLoadComplete();
+
 	return script->CreateBooleanValue(res);
 }
 value DxScript::Func_RemoveTexture(script_machine* machine, int argc, const value* argv) {
@@ -2312,6 +2362,15 @@ gstd::value DxScript::Func_ColorRGBtoHSV(gstd::script_machine* machine, int argc
 
 	return DxScript::CreateIntArrayValue(reinterpret_cast<FLOAT*>(&hsv), 3U);
 }
+gstd::value DxScript::Func_ColorHexRGBtoHSV(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	D3DCOLOR color = argv[0].as_int();
+
+	D3DXVECTOR3 hsv;
+	ColorAccess::RGBtoHSV(hsv, ColorAccess::GetColorR(color), 
+		ColorAccess::GetColorG(color), ColorAccess::GetColorB(color));
+
+	return DxScript::CreateIntArrayValue(reinterpret_cast<FLOAT*>(&hsv), 3U);
+}
 gstd::value DxScript::Func_ColorHSVtoRGB(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	int ch = argv[0].as_int();
 	byte cs = argv[1].as_int();
@@ -2344,11 +2403,33 @@ value DxScript::Func_SetInvalidPositionReturn(script_machine* machine, int argc,
 }
 
 //Dx関数：オブジェクト操作(共通)
+value DxScript::Func_Obj_Create(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	script->CheckRunInMainThread();
+
+	ref_unsync_ptr<DxScriptObjectBase> obj = new DxScriptObjectBase();
+
+	int id = ID_INVALID;
+	if (obj) {
+		obj->Initialize();
+		obj->manager_ = script->objManager_.get();
+		id = script->AddObject(obj);
+	}
+	return script->CreateIntValue(id);
+}
 value DxScript::Func_Obj_Delete(script_machine* machine, int argc, const value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	script->CheckRunInMainThread();
 	int id = argv[0].as_int();
 	script->DeleteObject(id);
+	return value();
+}
+value DxScript::Func_Obj_QueueDelete(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	script->CheckRunInMainThread();
+	int id = argv[0].as_int();
+	DxScriptObjectBase* obj = script->GetObjectPointer(id);
+	if (obj) obj->QueueDelete();
 	return value();
 }
 value DxScript::Func_Obj_IsDeleted(script_machine* machine, int argc, const value* argv) {
@@ -2435,24 +2516,14 @@ gstd::value DxScript::Func_Obj_GetValue(gstd::script_machine* machine, int argc,
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
 	std::wstring key = argv[1].as_string();
+	gstd::value def = argc >= 3 ? argv[2] : value();
 
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
 	if (obj) {
-		auto itr = obj->mapObjectValue_.find(DxScriptObjectBase::GetKeyHash(key));
-		if (itr != obj->mapObjectValue_.end()) return itr->second;
-	}
-	return value();
-}
-gstd::value DxScript::Func_Obj_GetValueD(gstd::script_machine* machine, int argc, const gstd::value* argv) {
-	DxScript* script = (DxScript*)machine->data;
-	int id = argv[0].as_int();
-	std::wstring key = argv[1].as_string();
-	gstd::value def = argv[2];
-
-	DxScriptObjectBase* obj = script->GetObjectPointer(id);
-	if (obj) {
-		auto itr = obj->mapObjectValue_.find(DxScriptObjectBase::GetKeyHash(key));
-		if (itr != obj->mapObjectValue_.end()) return itr->second;
+		auto pValueMap = obj->GetValueMap();
+		auto itr = pValueMap->find(key);
+		if (itr != pValueMap->end())
+			return itr->second;
 	}
 	return def;
 }
@@ -2463,7 +2534,10 @@ gstd::value DxScript::Func_Obj_SetValue(gstd::script_machine* machine, int argc,
 	gstd::value val = argv[2];
 
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
-	if (obj) obj->SetObjectValue(key, val);
+	if (obj) {
+		auto pValueMap = obj->GetValueMap();
+		(*pValueMap)[key] = val;
+	}
 
 	return value();
 }
@@ -2473,7 +2547,10 @@ gstd::value DxScript::Func_Obj_DeleteValue(gstd::script_machine* machine, int ar
 	std::wstring key = argv[1].as_string();
 
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
-	if (obj) obj->DeleteObjectValue(key);
+	if (obj) {
+		auto pValueMap = obj->GetValueMap();
+		pValueMap->erase(key);
+	}
 
 	return value();
 }
@@ -2485,7 +2562,10 @@ gstd::value DxScript::Func_Obj_IsValueExists(gstd::script_machine* machine, int 
 	bool res = false;
 
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
-	if (obj) res = obj->IsObjectValueExists(key);
+	if (obj) {
+		auto pValueMap = obj->GetValueMap();
+		res = pValueMap->find(key) != pValueMap->end();
+	}
 
 	return script->CreateBooleanValue(res);
 }
@@ -2493,37 +2573,28 @@ gstd::value DxScript::Func_Obj_IsValueExists(gstd::script_machine* machine, int 
 gstd::value DxScript::Func_Obj_GetValueI(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
-	int64_t keyInt = argv[1].as_int();
+	int64_t key = argv[1].as_int();
+	gstd::value def = argc >= 3 ? argv[2] : value();
 
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
 	if (obj) {
-		auto itr = obj->mapObjectValue_.find(DxScriptObjectBase::GetKeyHashI64(keyInt));
-		if (itr != obj->mapObjectValue_.end()) return itr->second;
-	}
-	return value();
-}
-gstd::value DxScript::Func_Obj_GetValueDI(gstd::script_machine* machine, int argc, const gstd::value* argv) {
-	DxScript* script = (DxScript*)machine->data;
-	int id = argv[0].as_int();
-	int64_t keyInt = argv[1].as_int();
-	gstd::value def = argv[2];
-
-	DxScriptObjectBase* obj = script->GetObjectPointer(id);
-	if (obj) {
-		auto itr = obj->mapObjectValue_.find(DxScriptObjectBase::GetKeyHashI64(keyInt));
-		if (itr != obj->mapObjectValue_.end()) return itr->second;
+		auto pValueMap = obj->GetValueMapI();
+		auto itr = pValueMap->find(key);
+		if (itr != pValueMap->end())
+			return itr->second;
 	}
 	return def;
 }
 gstd::value DxScript::Func_Obj_SetValueI(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
-	int64_t keyInt = argv[1].as_int();
+	int64_t key = argv[1].as_int();
 	gstd::value val = argv[2];
 
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
 	if (obj) {
-		obj->SetObjectValue(DxScriptObjectBase::GetKeyHashI64(keyInt), val);
+		auto pValueMap = obj->GetValueMapI();
+		(*pValueMap)[key] = val;
 	}
 
 	return value();
@@ -2531,11 +2602,12 @@ gstd::value DxScript::Func_Obj_SetValueI(gstd::script_machine* machine, int argc
 gstd::value DxScript::Func_Obj_DeleteValueI(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
-	int64_t keyInt = argv[1].as_int();
+	int64_t key = argv[1].as_int();
 
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
 	if (obj) {
-		obj->DeleteObjectValue(DxScriptObjectBase::GetKeyHashI64(keyInt));
+		auto pValueMap = obj->GetValueMapI();
+		pValueMap->erase(key);
 	}
 
 	return value();
@@ -2543,13 +2615,14 @@ gstd::value DxScript::Func_Obj_DeleteValueI(gstd::script_machine* machine, int a
 gstd::value DxScript::Func_Obj_IsValueExistsI(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
-	double keyDbl = argv[1].as_real();
+	int64_t key = argv[1].as_real();
 
 	bool res = false;
 
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
 	if (obj) {
-		res = obj->IsObjectValueExists(DxScriptObjectBase::GetKeyHashI64(keyDbl));
+		auto pValueMap = obj->GetValueMapI();
+		res = pValueMap->find(key) != pValueMap->end();
 	}
 
 	return script->CreateBooleanValue(res);
@@ -2599,6 +2672,33 @@ gstd::value DxScript::Func_Obj_CopyValueTable(gstd::script_machine* machine, int
 	return script->CreateIntValue(countValue);
 }
 
+gstd::value DxScript::Func_Obj_GetValueCount(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	int64_t res = 0;
+	DxScriptObjectBase* obj = script->GetObjectPointer(id);
+	if (obj)
+		res = obj->GetValueMap()->size();
+	return script->CreateIntValue(res);
+}
+gstd::value DxScript::Func_Obj_GetValueCountI(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	int64_t res = 0;
+	DxScriptObjectBase* obj = script->GetObjectPointer(id);
+	if (obj)
+		res = obj->GetValueMapI()->size();
+	return script->CreateIntValue(res);
+}
+
+gstd::value DxScript::Func_Obj_GetExistFrame(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	DxScriptObjectBase* obj = script->GetObjectPointer(id);
+	int res = obj ? obj->GetExistFrame() : 0;
+	return script->CreateIntValue(res);
+}
+
 value DxScript::Func_Obj_GetType(script_machine* machine, int argc, const value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
@@ -2610,7 +2710,39 @@ value DxScript::Func_Obj_GetType(script_machine* machine, int argc, const value*
 
 	return script->CreateIntValue((uint8_t)res);
 }
+value DxScript::Func_Obj_GetParentScriptID(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
 
+	int64_t res = (int64_t)ScriptClientBase::ID_SCRIPT_FREE;
+
+	DxScriptObjectBase* obj = script->GetObjectPointerAs<DxScriptObjectBase>(id);
+	if (obj) res = obj->GetScriptID();
+
+	return script->CreateIntValue(res);
+}
+value DxScript::Func_Obj_SetNewParentScript(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	int64_t idScript = script->GetScriptID();
+
+	if (argc == 2) idScript = argv[1].as_int();
+
+	DxScriptObjectBase* obj = script->GetObjectPointerAs<DxScriptObjectBase>(id);
+	if (obj) obj->idScript_ = idScript;
+
+	return value();
+}
+value DxScript::Func_Obj_SetAutoDelete(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	bool del = argv[1].as_boolean();
+
+	DxScriptObjectBase* obj = script->GetObjectPointerAs<DxScriptObjectBase>(id);
+	if (obj) obj->SetAutoDeleteEnable(del);
+
+	return value();
+}
 
 //Dx関数：オブジェクト操作(RenderObject)
 value DxScript::Func_ObjRender_SetX(script_machine* machine, int argc, const value* argv) {
@@ -2712,7 +2844,7 @@ value DxScript::Func_ObjRender_SetScaleXYZ(script_machine* machine, int argc, co
 	int id = argv[0].as_int();
 	DxScriptRenderObject* obj = script->GetObjectPointerAs<DxScriptRenderObject>(id);
 	if (obj) {
-		if (argc == 4) {
+		if (argc > 2) {
 			obj->SetScaleX(argv[1].as_real());
 			obj->SetScaleY(argv[2].as_real());
 			obj->SetScaleZ(argv[3].as_real());
@@ -3136,8 +3268,10 @@ gstd::value DxScript::Func_ObjShader_Create(gstd::script_machine* machine, int a
 }
 gstd::value DxScript::Func_ObjShader_SetShaderF(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
+
 	int id = argv[0].as_int();
 	bool res = false;
+
 	DxScriptRenderObject* obj = script->GetObjectPointerAs<DxScriptRenderObject>(id);
 	if (obj) {
 		std::wstring path = argv[1].as_string();
@@ -3167,9 +3301,10 @@ gstd::value DxScript::Func_ObjShader_SetShaderF(gstd::script_machine* machine, i
 }
 gstd::value DxScript::Func_ObjShader_SetShaderO(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
-	bool res = false;
 
+	bool res = false;
 	int id1 = argv[0].as_int();
+
 	DxScriptRenderObject* obj1 = script->GetObjectPointerAs<DxScriptRenderObject>(id1);
 	if (obj1) {
 		int id2 = argv[1].as_int();
@@ -3181,6 +3316,30 @@ gstd::value DxScript::Func_ObjShader_SetShaderO(gstd::script_machine* machine, i
 				res = true;
 			}
 		}
+	}
+	return script->CreateBooleanValue(res);
+}
+gstd::value DxScript::Func_ObjShader_SetShaderT(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+
+	bool res = false;
+	int id = argv[0].as_int();
+
+	DxScriptRenderObject* obj = script->GetObjectPointerAs<DxScriptRenderObject>(id);
+	if (obj) {
+		std::wstring name = argv[1].as_string();
+		std::string shaderSource = StringUtility::ConvertWideToMulti(argv[2].as_string());
+
+		ShaderManager* manager = ShaderManager::GetBase();
+
+		shared_ptr<Shader> shader = manager->CreateFromText(name, shaderSource);
+		if (shader == nullptr) {
+			const std::wstring& error = manager->GetLastError();
+			script->RaiseError(error);
+		}
+
+		obj->SetShader(shader);
+		res = shader != nullptr;
 	}
 	return script->CreateBooleanValue(res);
 }
@@ -4240,6 +4399,16 @@ value DxScript::Func_ObjText_SetSidePitch(script_machine* machine, int argc, con
 	}
 	return value();
 }
+value DxScript::Func_ObjText_SetFixedWidth(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	DxScriptTextObject* obj = script->GetObjectPointerAs<DxScriptTextObject>(id);
+	if (obj) {
+		float width = argv[1].as_real();
+		obj->SetFixedWidth(width);
+	}
+	return value();
+}
 value DxScript::Func_ObjText_SetVertexColor(script_machine* machine, int argc, const value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
@@ -4285,6 +4454,16 @@ gstd::value DxScript::Func_ObjText_SetHorizontalAlignment(gstd::script_machine* 
 	}
 	return value();
 }
+gstd::value DxScript::Func_ObjText_SetVerticalAlignment(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	DxScriptTextObject* obj = script->GetObjectPointerAs<DxScriptTextObject>(id);
+	if (obj) {
+		TextAlignment align = (TextAlignment)argv[1].as_int();
+		obj->SetVerticalAlignment(align);
+	}
+	return value();
+}
 gstd::value DxScript::Func_ObjText_SetSyntacticAnalysis(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
@@ -4292,6 +4471,16 @@ gstd::value DxScript::Func_ObjText_SetSyntacticAnalysis(gstd::script_machine* ma
 	if (obj)
 		obj->SetSyntacticAnalysis(argv[1].as_boolean());
 	return value();
+}
+value DxScript::Func_ObjText_GetText(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	std::wstring res = L"";
+	DxScriptTextObject* obj = script->GetObjectPointerAs<DxScriptTextObject>(id);
+	if (obj) {
+		res = obj->GetText();
+	}
+	return script->CreateStringValue(res);
 }
 value DxScript::Func_ObjText_GetTextLength(script_machine* machine, int argc, const value* argv) {
 	DxScript* script = (DxScript*)machine->data;
@@ -4789,9 +4978,9 @@ gstd::value DxScript::Func_ObjFileT_SplitLineText(gstd::script_machine* machine,
 	if (obj == nullptr) return script->CreateStringArrayValue(std::vector<std::wstring>());
 
 	int pos = argv[1].as_int();
-	std::wstring delim = argv[2].as_string();
+	std::wstring pattern = argv[2].as_string();
 	std::wstring line = obj->GetLineAsWString(pos);
-	std::vector<std::wstring> list = StringUtility::Split(line, delim);
+	std::vector<std::wstring> list = StringUtility::SplitPattern(line, pattern);
 
 	return script->CreateStringArrayValue(list);
 }

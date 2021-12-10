@@ -108,6 +108,7 @@ namespace directx {
 		static gstd::value Func_GetMouseState(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_GetVirtualKeyState(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_SetVirtualKeyState(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		static gstd::value Func_GetVirtualKeyMapping(gstd::script_machine* machine, int argc, const gstd::value* argv);
 
 		//Dx関数：描画系
 		DNH_FUNCAPI_DECL_(Func_GetMonitorWidth);
@@ -117,10 +118,14 @@ namespace directx {
 		DNH_FUNCAPI_DECL_(Func_GetWindowedWidth);
 		DNH_FUNCAPI_DECL_(Func_GetWindowedHeight);
 		DNH_FUNCAPI_DECL_(Func_IsFullscreenMode);
+		DNH_FUNCAPI_DECL_(Func_GetCoordinateScalingFactor);
+		DNH_FUNCAPI_DECL_(Func_SetCoordinateScalingFactor);
+
 		static gstd::value Func_LoadTexture(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_LoadTextureInLoadThread(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		DNH_FUNCAPI_DECL_(Func_LoadTextureEx);
 		DNH_FUNCAPI_DECL_(Func_LoadTextureInLoadThreadEx);
+		DNH_FUNCAPI_DECL_(Func_IsLoadThreadLoading);
 		static gstd::value Func_RemoveTexture(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_GetTextureWidth(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_GetTextureHeight(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -233,6 +238,7 @@ namespace directx {
 		DNH_FUNCAPI_DECL_(Func_ColorARGBToHex);
 		DNH_FUNCAPI_DECL_(Func_ColorHexToARGB);
 		DNH_FUNCAPI_DECL_(Func_ColorRGBtoHSV);
+		DNH_FUNCAPI_DECL_(Func_ColorHexRGBtoHSV);
 		DNH_FUNCAPI_DECL_(Func_ColorHSVtoRGB);
 		DNH_FUNCAPI_DECL_(Func_ColorHSVtoHexRGB);
 
@@ -240,7 +246,9 @@ namespace directx {
 		DNH_FUNCAPI_DECL_(Func_SetInvalidPositionReturn);
 
 		//Dx関数：オブジェクト操作(共通)
+		static gstd::value Func_Obj_Create(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_Delete(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		static gstd::value Func_Obj_QueueDelete(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_IsDeleted(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_IsExists(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_SetVisible(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -250,17 +258,21 @@ namespace directx {
 		static gstd::value Func_Obj_GetRenderPriority(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_GetRenderPriorityI(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_GetValue(gstd::script_machine* machine, int argc, const gstd::value* argv);
-		static gstd::value Func_Obj_GetValueD(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_SetValue(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_DeleteValue(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_IsValueExists(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		DNH_FUNCAPI_DECL_(Func_Obj_GetValueI);
-		DNH_FUNCAPI_DECL_(Func_Obj_GetValueDI);
 		DNH_FUNCAPI_DECL_(Func_Obj_SetValueI);
 		DNH_FUNCAPI_DECL_(Func_Obj_DeleteValueI);
 		DNH_FUNCAPI_DECL_(Func_Obj_IsValueExistsI);
 		DNH_FUNCAPI_DECL_(Func_Obj_CopyValueTable);
+		DNH_FUNCAPI_DECL_(Func_Obj_GetValueCount);
+		DNH_FUNCAPI_DECL_(Func_Obj_GetValueCountI);
+		static gstd::value Func_Obj_GetExistFrame(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_Obj_GetType(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		static gstd::value Func_Obj_GetParentScriptID(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		static gstd::value Func_Obj_SetNewParentScript(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		static gstd::value Func_Obj_SetAutoDelete(gstd::script_machine* machine, int argc, const gstd::value* argv);
 
 		//Dx関数：オブジェクト操作(RenderObject)
 		static gstd::value Func_ObjRender_SetX(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -314,6 +326,7 @@ namespace directx {
 		static gstd::value Func_ObjShader_Create(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjShader_SetShaderF(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjShader_SetShaderO(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		static gstd::value Func_ObjShader_SetShaderT(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjShader_ResetShader(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjShader_SetTechnique(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjShader_SetMatrix(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -409,11 +422,14 @@ namespace directx {
 		static gstd::value Func_ObjText_SetMaxHeight(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_SetLinePitch(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_SetSidePitch(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		DNH_FUNCAPI_DECL_(Func_ObjText_SetFixedWidth);
 		static gstd::value Func_ObjText_SetVertexColor(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_SetTransCenter(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_SetAutoTransCenter(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_SetHorizontalAlignment(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		static gstd::value Func_ObjText_SetVerticalAlignment(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_SetSyntacticAnalysis(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		static gstd::value Func_ObjText_GetText(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_GetTextLength(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_GetTextLengthCU(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_GetTextLengthCUL(gstd::script_machine* machine, int argc, const gstd::value* argv);

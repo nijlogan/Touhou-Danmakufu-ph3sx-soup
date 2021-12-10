@@ -5,6 +5,8 @@
 #include "SmartPointer.hpp"
 #include "VectorExtension.hpp"
 
+#include "GstdConstant.hpp"
+
 namespace gstd {
 	//================================================================
 	//DebugUtility
@@ -53,29 +55,26 @@ namespace gstd {
 	class VersionUtility {
 	public:
 		static inline uint64_t ExtractMajor(uint64_t target) {
-			return (target >> 48) & 0xffff;
+			return (target >> 40) & 0xfff;
+		}
+		static inline uint64_t ExtractSubmajor(uint64_t target) {
+			return (target >> 24) & 0xffff;
 		}
 		static inline uint64_t ExtractMinor(uint64_t target) {
-			return (target >> 32) & 0xffff;
-		}
-		static inline uint64_t ExtractMicro(uint64_t target) {
-			return (target >> 16) & 0xffff;
+			return (target >> 8) & 0xffff;
 		}
 		static inline uint64_t ExtractRevision(uint64_t target) {
-			return target & 0xffff;
+			return target & 0xff;
 		}
-		//Should ensure compatibility if version's [reserved], [major], and [minor] match target's
+		//Should ensure compatibility if reserved, major, and submajor match target's
 		static inline const bool IsDataBackwardsCompatible(uint64_t target, uint64_t version) {
-			return ((version ^ target) >> 16) == 0;
+			return (version >> 24) == (target >> 24);
 		}
 	};
 
 	//================================================================
 	//Encoding
 	class Encoding {
-		//http://msdn.microsoft.com/ja-jp/library/system.text.encoding(v=vs.110).aspx
-		//babel
-		//http://d.hatena.ne.jp/A7M/20100801/1280629387
 	public:
 		typedef enum : int8_t {
 			UNKNOWN = -1,
@@ -92,7 +91,11 @@ namespace gstd {
 		static Type Detect(const char* data, size_t dataSize);
 		static size_t GetBomSize(const char* data, size_t dataSize);
 		static size_t GetBomSize(Type encoding);
+		static const byte* GetBom(Type encoding);
 		static size_t GetCharSize(Type encoding);
+
+		static const char* StringRepresentation(Type encoding);
+		static const wchar_t* WStringRepresentation(Type encoding);
 
 		static size_t GetMultibyteSize(const char* data);
 		static wchar_t BytesToWChar(const char* data, Type encoding);
@@ -123,8 +126,13 @@ namespace gstd {
 
 		//----------------------------------------------------------------
 
+		template<class T_STR>
+		static void Split(const T_STR& str, const T_STR& delim, std::vector<T_STR>& res);
+		template<class T_STR>
+		static void SplitPattern(const T_STR& str, const T_STR& pattern, std::vector<T_STR>& res);
+
 		static std::vector<std::string> Split(const std::string& str, const std::string& delim);
-		static void Split(const std::string& str, const std::string& delim, std::vector<std::string>& res);
+		static std::vector<std::string> SplitPattern(const std::string& str, const std::string& pattern);
 		static std::string Format(const char* str, ...);
 		static std::string Format(const char* str, va_list va);
 
@@ -144,7 +152,7 @@ namespace gstd {
 		//----------------------------------------------------------------
 
 		static std::vector<std::wstring> Split(const std::wstring& str, const std::wstring& delim);
-		static void Split(const std::wstring& str, const std::wstring& delim, std::vector<std::wstring>& res);
+		static std::vector<std::wstring> SplitPattern(const std::wstring& str, const std::wstring& pattern);
 		static std::wstring Format(const wchar_t* str, ...);
 		static std::wstring Format(const wchar_t* str, va_list va);
 		static std::wstring FormatToWide(const char* str, ...);
@@ -282,10 +290,12 @@ namespace gstd {
 			pos[1] = oy + y;
 		}
 
-		static inline size_t FloorBase(size_t val, size_t base) {
+		template<typename T>
+		static inline T FloorBase(T val, T base) {
 			return (val % base != 0) ? ((val / base) * base) : val;
 		}
-		static inline size_t CeilBase(size_t val, size_t base) {
+		template<typename T>
+		static inline T CeilBase(T val, T base) {
 			return (val % base != 0) ? ((val / base) * base + base) : val;
 		}
 

@@ -12,13 +12,16 @@ std::atomic<int64_t> ScriptManager::idScript_ = 0;
 ScriptManager::ScriptManager() {
 	mainThreadID_ = GetCurrentThreadId();
 
+	bCancelLoad_ = false;
+	nActiveScriptLoad_ = 0;
+
 	bHasCloseScriptWork_ = false;
 
 	FileManager::GetBase()->AddLoadThreadListener(this);
 }
 ScriptManager::~ScriptManager() {
+	this->WaitForCancel();
 	FileManager::GetBase()->RemoveLoadThreadListener(this);
-	FileManager::GetBase()->WaitForThreadLoadComplete();
 }
 
 void ScriptManager::Work() {
@@ -115,18 +118,12 @@ void ScriptManager::StartScript(int64_t id, bool bUnload) {
 	}
 }
 void ScriptManager::StartScript(shared_ptr<ManagedScript> script, bool bUnload) {
-	/*
-	if (!script->IsBeginLoad()) {
-		throw wexception(StringUtility::Format(L"ScriptManager: Script isn't loaded [%s]",
-			script->GetPath().c_str()));
-	}
-	*/
 	if (!script->IsLoad()) {
 		DWORD count = 0;
 		while (!script->IsLoad()) {
 			if (count % 100 == 0) {
 				Logger::WriteTop(StringUtility::Format(L"ScriptManager: Script is still loading... [%s]",
-					script->GetPath().c_str()));
+					PathProperty::ReduceModuleDirectory(script->GetPath()).c_str()));
 			}
 			::Sleep(10);
 			++count;
@@ -140,7 +137,7 @@ void ScriptManager::StartScript(shared_ptr<ManagedScript> script, bool bUnload) 
 			if (iScript->GetScriptID() == script->GetScriptID()) {
 				Logger::WriteTop(StringUtility::Format(
 					L"ScriptManager: Cannot run multiple instances of the same loaded script simultaneously. [%s]\r\n",
-					script->GetPath().c_str()));
+					PathProperty::ReduceModuleDirectory(script->GetPath()).c_str()));
 				return;
 			}
 		}
@@ -183,6 +180,8 @@ void ScriptManager::CloseScript(shared_ptr<ManagedScript> id) {
 
 	if (id->IsAutoDeleteObject())
 		id->GetObjectManager()->DeleteObjectByScriptID(id->GetScriptID());
+	
+	// id->GetObjectManager()->OrphanObjectByScriptID(id->GetScriptID());
 }
 void ScriptManager::CloseScriptOnType(int type) {
 	for (auto& pScript : listScriptRun_) {
@@ -231,12 +230,10 @@ void ScriptManager::OrphanAllScripts() {
 }
 
 int64_t ScriptManager::_LoadScript(const std::wstring& path, shared_ptr<ManagedScript> script) {
+	++nActiveScriptLoad_;
 	int64_t res = script->GetScriptID();
 
-	{
-		StaticLock lock = StaticLock();
-		script->bBeginLoad_ = true;
-	}
+	script->bBeginLoad_ = true;
 
 	script->SetSourceFromFile(path);
 	script->Compile();
@@ -245,14 +242,15 @@ int64_t ScriptManager::_LoadScript(const std::wstring& path, shared_ptr<ManagedS
 	if (script->IsEventExists("Loading", itrEvent))
 		script->Run(itrEvent);
 
+	script->bLoad_ = true;
+	script->bRunning_ = false;
 	{
-		//Lock lock(lock_);		//Using this seems to hang the lock indefinitely, what???????
+		//Lock lock(lock_);
 		StaticLock lock = StaticLock();
-		script->bLoad_ = true;
-		script->bRunning_ = false;
 		mapScriptLoad_[res] = script;
 	}
 
+	--nActiveScriptLoad_;
 	return res;
 }
 int64_t ScriptManager::LoadScript(const std::wstring& path, shared_ptr<ManagedScript> script) {
@@ -267,7 +265,7 @@ shared_ptr<ManagedScript> ScriptManager::LoadScript(const std::wstring& path, in
 int64_t ScriptManager::LoadScriptInThread(const std::wstring& path, shared_ptr<ManagedScript> script) {
 	int64_t res = 0;
 	{
-		StaticLock lock = StaticLock();		//???????
+		Lock lock(lock_);
 
 		script->SetPath(path);
 
@@ -289,6 +287,11 @@ void ScriptManager::CallFromLoadThread(shared_ptr<gstd::FileManager::LoadThreadE
 
 	shared_ptr<ManagedScript> script = std::dynamic_pointer_cast<ManagedScript>(event->GetSource());
 	if (script == nullptr || script->IsLoad()) return;
+
+	if (bCancelLoad_) {
+		script->bLoad_ = true;
+		return;
+	}
 
 	try {
 		_LoadScript(path, script);
@@ -375,6 +378,9 @@ static const std::vector<function> managedScriptFunction = {
 	{ "SetScriptArgument", ManagedScript::Func_SetScriptArgument, 3 },
 	{ "GetScriptResult", ManagedScript::Func_GetScriptResult, 1 },
 	{ "SetAutoDeleteObject", ManagedScript::Func_SetAutoDeleteObject, 1 },
+	{ "GetAllObjectIdInScript", ManagedScript::Func_GetAllObjectIdInScript, 0 },
+	{ "GetAllObjectIdInScript", ManagedScript::Func_GetAllObjectIdInScript, 1 }, //Overloaded
+	{ "GetAllObjectIdInPool", ManagedScript::Func_GetAllObjectIdInPool, 0 },
 
 	{ "NotifyEvent", ManagedScript::Func_NotifyEvent, -4 },			//2 fixed + ... -> 3 minimum
 	{ "NotifyEventOwn", ManagedScript::Func_NotifyEventOwn, -3 },	//1 fixed + ... -> 2 minimum
@@ -594,6 +600,22 @@ gstd::value ManagedScript::Func_SetAutoDeleteObject(script_machine* machine, int
 	ManagedScript* script = (ManagedScript*)machine->data;
 	script->SetAutoDeleteObject(argv[0].as_boolean());
 	return value();
+}
+gstd::value ManagedScript::Func_GetAllObjectIdInScript(script_machine* machine, int argc, const value* argv) {
+	ManagedScript* script = (ManagedScript*)machine->data;
+	int64_t idScript = script->idScript_;
+	if (argc == 1) idScript = argv[0].as_int();
+
+	std::vector<int> res = script->GetObjectManager()->GetObjectByScriptID(idScript);
+
+	return script->CreateIntArrayValue(res);
+}
+gstd::value ManagedScript::Func_GetAllObjectIdInPool(script_machine* machine, int argc, const value* argv) {
+	ManagedScript* script = (ManagedScript*)machine->data;
+
+	std::vector<int> res = script->GetObjectManager()->GetValidObjectIdentifier();
+
+	return script->CreateIntArrayValue(res);
 }
 gstd::value ManagedScript::Func_NotifyEvent(script_machine* machine, int argc, const value* argv) {
 	ManagedScript* script = (ManagedScript*)machine->data;

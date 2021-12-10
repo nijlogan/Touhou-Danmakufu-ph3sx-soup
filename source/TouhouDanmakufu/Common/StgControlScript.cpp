@@ -2,6 +2,7 @@
 
 #include "StgControlScript.hpp"
 #include "StgSystem.hpp"
+#include "../DnhExecutor/GcLibImpl.hpp"
 
 //*******************************************************************
 //StgControlScriptManager
@@ -80,6 +81,10 @@ static const std::vector<function> stgControlFunction = {
 	{ "IsEngineFastMode", StgControlScript::Func_IsEngineFastMode, 0 },
 	{ "GetConfigWindowSizeIndex", StgControlScript::Func_GetConfigWindowSizeIndex, 0 },
 	{ "GetConfigWindowSizeList", StgControlScript::Func_GetConfigWindowSizeList, 0 },
+	{ "GetConfigVirtualKeyMapping", StgControlScript::Func_GetConfigVirtualKeyMapping, 1 },
+	{ "SetWindowTitle", StgControlScript::Func_SetWindowTitle, 1 },
+	{ "ResetWindowTitle", StgControlScript::Func_ResetWindowTitle, 0 },
+	{ "GetDefaultWindowTitle", StgControlScript::Func_GetDefaultWindowTitle, 0 },
 
 	//STG共通関数：描画関連
 	{ "ClearInvalidRenderPriority", StgControlScript::Func_ClearInvalidRenderPriority, 0 },
@@ -616,6 +621,44 @@ gstd::value StgControlScript::Func_GetConfigWindowSizeList(script_machine* machi
 	}
 	return script->CreateValueArrayValue(resListSizes);
 }
+gstd::value StgControlScript::Func_GetConfigVirtualKeyMapping(script_machine* machine, int argc, const value* argv) {
+	DnhConfiguration* config = DnhConfiguration::GetInstance();
+	int16_t vk = (int16_t)argv->as_int();
+
+	int16_t key_pad[2] = { EDirectInput::KEY_INVALID, EDirectInput::KEY_INVALID };
+
+	auto itr = config->mapKey_.find(vk);
+	if (itr != config->mapKey_.end()) {
+		key_pad[0] = itr->second->GetKeyCode();
+		key_pad[1] = itr->second->GetPadButton();
+	}
+
+	return StgControlScript::CreateIntArrayValue(key_pad, 2U);
+}
+gstd::value StgControlScript::Func_SetWindowTitle(script_machine* machine, int argc, const value* argv) {
+	EDirectGraphics* window = EDirectGraphics::GetInstance();
+	std::wstring title = argv->as_string();
+	HWND hWndDisplay = window->GetParentHWND();
+
+	::SetWindowText(hWndDisplay, title.c_str());
+	return value();
+}
+gstd::value StgControlScript::Func_ResetWindowTitle(script_machine* machine, int argc, const value* argv) {
+	EDirectGraphics* window = EDirectGraphics::GetInstance();
+	DnhConfiguration* config = DnhConfiguration::GetInstance();
+	std::wstring& title = config->windowTitle_;
+	HWND hWndDisplay = window->GetParentHWND();
+
+	::SetWindowText(hWndDisplay, title.c_str());
+	return value();
+}
+gstd::value StgControlScript::Func_GetDefaultWindowTitle(script_machine* machine, int argc, const value* argv) {
+	DnhConfiguration* config = DnhConfiguration::GetInstance();
+	std::wstring& title = config->windowTitle_;
+
+	return StgControlScript::CreateStringValue(title);
+}
+
 
 //STG共通関数：描画関連
 gstd::value StgControlScript::Func_ClearInvalidRenderPriority(gstd::script_machine* machine, int argc, const gstd::value* argv) {

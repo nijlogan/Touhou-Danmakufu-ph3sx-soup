@@ -10,6 +10,7 @@ namespace directx {
 	class ShaderManager;
 	class Shader;
 	class ShaderData;
+	class ShaderIncludeCallback;
 	class ShaderInfoPanel;
 
 	//*******************************************************************
@@ -22,6 +23,7 @@ namespace directx {
 	private:
 		ShaderManager* manager_;
 		ID3DXEffect* effect_;
+		std::unique_ptr<ShaderIncludeCallback> pIncludeCallback_;
 		std::wstring name_;
 		bool bLoad_;
 		bool bText_;
@@ -57,10 +59,10 @@ namespace directx {
 
 		void _ReleaseShaderData(const std::wstring& name);
 		void _ReleaseShaderData(std::map<std::wstring, shared_ptr<ShaderData>>::iterator itr);
+
 		bool _CreateFromFile(const std::wstring& path, shared_ptr<ShaderData>& dest);
-		bool _CreateFromText(const std::string& source, shared_ptr<ShaderData>& dest);
+		bool _CreateFromText(const std::wstring& name, const std::string& source, shared_ptr<ShaderData>& dest);
 		bool _CreateUnmanagedFromEffect(ID3DXEffect* effect, shared_ptr<ShaderData>& dest);
-		static std::wstring _GetTextSourceID(const std::string& source);
 	public:
 		ShaderManager();
 		virtual ~ShaderManager();
@@ -81,7 +83,7 @@ namespace directx {
 		shared_ptr<ShaderData> GetShaderData(const std::wstring& name);
 
 		shared_ptr<Shader> CreateFromFile(const std::wstring& path);
-		shared_ptr<Shader> CreateFromText(const std::string& source);
+		shared_ptr<Shader> CreateFromText(const std::wstring& name, const std::string& source);
 		shared_ptr<Shader> CreateFromData(shared_ptr<ShaderData> data);
 		shared_ptr<Shader> CreateUnmanagedFromEffect(ID3DXEffect* effect);
 		shared_ptr<Shader> CreateFromFileInLoadThread(const std::wstring& path);
@@ -182,7 +184,7 @@ namespace directx {
 		ID3DXEffect* GetEffect();
 
 		bool CreateFromFile(const std::wstring& path);
-		bool CreateFromText(const std::string& source);
+		bool CreateFromText(const std::wstring& name, const std::string& source);
 		bool CreateFromData(shared_ptr<ShaderData> data);
 
 		bool IsLoad() { return data_ != nullptr && data_->bLoad_; }
@@ -194,5 +196,20 @@ namespace directx {
 		bool SetFloat(const std::string& name, FLOAT value);
 		bool SetFloatArray(const std::string& name, std::vector<FLOAT>& values);
 		bool SetTexture(const std::string& name, shared_ptr<Texture> texture);
+	};
+
+	//*******************************************************************
+	//ShaderIncludeCallback
+	//*******************************************************************
+	class ShaderIncludeCallback : public ID3DXInclude {
+	private:
+		std::wstring includeLocalDir_;
+		std::vector<char> buffer_;
+	public:
+		ShaderIncludeCallback(const std::wstring& localDir);
+		virtual ~ShaderIncludeCallback();
+
+		HRESULT __stdcall Open(D3DXINCLUDE_TYPE type, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes);
+		HRESULT __stdcall Close(LPCVOID pData);
 	};
 }

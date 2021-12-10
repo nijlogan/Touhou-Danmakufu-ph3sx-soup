@@ -108,7 +108,7 @@ namespace gstd {
 		void _RaiseError(int line, const std::wstring& message);
 		std::wstring _GetErrorLineSource(int line);
 
-		virtual std::vector<char> _ParsePreprocessors(std::vector<char>& source);
+		virtual std::vector<char> _ParseScriptSource(std::vector<char>& source);
 		virtual bool _CreateEngine();
 
 		std::wstring _ExtendPath(std::wstring path);
@@ -154,6 +154,7 @@ namespace gstd {
 		static inline value CreateRealValue(double r);
 		static inline value CreateIntValue(int64_t r);
 		static inline value CreateBooleanValue(bool b);
+		static inline value CreateCharValue(wchar_t c);
 		static inline value CreateStringValue(const std::wstring& s);
 		static inline value CreateStringValue(const std::string& s);
 		template<typename T> static inline value CreateRealArrayValue(std::vector<T>& list);
@@ -180,6 +181,13 @@ namespace gstd {
 		static value Func_GetScriptArgument(script_machine* machine, int argc, const value* argv);
 		static value Func_GetScriptArgumentCount(script_machine* machine, int argc, const value* argv);
 		static value Func_SetScriptResult(script_machine* machine, int argc, const value* argv);
+
+		//Floating point functions
+		DNH_FUNCAPI_DECL_(Float_Classify);
+		DNH_FUNCAPI_DECL_(Float_IsNan);
+		DNH_FUNCAPI_DECL_(Float_IsInf);
+		DNH_FUNCAPI_DECL_(Float_GetSign);
+		DNH_FUNCAPI_DECL_(Float_CopySign);
 
 		//Maths functions
 		static value Func_Min(script_machine* machine, int argc, const value* argv);
@@ -318,8 +326,13 @@ namespace gstd {
 		DNH_FUNCAPI_DECL_(Func_StringFormat);
 		static value Func_AtoI(script_machine* machine, int argc, const value* argv);
 		static value Func_AtoR(script_machine* machine, int argc, const value* argv);
+		template<wint_t (*func)(wint_t)>
+		static value Func_RecaseString(script_machine* machine, int argc, const value* argv);
+		template<int (*func)(wint_t)>
+		static value Func_ClassifyString(script_machine* machine, int argc, const value* argv);
 		static value Func_TrimString(script_machine* machine, int argc, const value* argv);
 		static value Func_SplitString(script_machine* machine, int argc, const value* argv);
+		DNH_FUNCAPI_DECL_(Func_SplitString2);
 
 		//String manipulations; regular expressions
 		DNH_FUNCAPI_DECL_(Func_RegexMatch);
@@ -397,6 +410,9 @@ namespace gstd {
 	value ScriptClientBase::CreateBooleanValue(bool b) {
 		return value(script_type_manager::get_boolean_type(), b);
 	}
+	value ScriptClientBase::CreateCharValue(wchar_t c) {
+		return value(script_type_manager::get_char_type(), c);
+	}
 	value ScriptClientBase::CreateStringValue(const std::wstring& s) {
 		return value(script_type_manager::get_string_type(), s);
 	}
@@ -471,11 +487,13 @@ namespace gstd {
 
 		void _ParseInclude();
 		void _ParseIfElse();
+
+		void _ConvertToEncoding(Encoding::Type targetEncoding);
 	public:
 		ScriptLoader(ScriptClientBase* script, const std::wstring& path, std::vector<char>& source);
 		~ScriptLoader();
 
-		void ParsePreprocessors();
+		void Parse();
 
 		std::vector<char>& GetResult() { return src_; }
 		gstd::ref_count_ptr<ScriptFileLineMap> GetLineMap() { return mapLine_; }

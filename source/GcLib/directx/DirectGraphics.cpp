@@ -16,15 +16,22 @@ using namespace directx;
 //*******************************************************************
 DirectGraphicsConfig::DirectGraphicsConfig() {
 	bShowWindow_ = true;
+	bShowCursor_ = true;
+
+	bWindowed_ = true;
+	bBorderlessFullscreen_ = true;
+
 	sizeScreen_ = { 640, 480 };
 	sizeScreenDisplay_ = { 640, 480 };
-	bWindowed_ = true;
-	bUseRef_ = false;
+	bUseDynamicScaling_ = false;
+
 	colorMode_ = COLOR_MODE_32BIT;
+	typeMultiSample_ = D3DMULTISAMPLE_NONE;
+	
+	bUseRef_ = false;
 	bUseTripleBuffer_ = true;
 	bVSync_ = false;
-	bBorderlessFullscreen_ = true;
-	typeMultiSample_ = D3DMULTISAMPLE_NONE;
+	
 	bCheckDeviceCaps_ = true;
 }
 
@@ -33,6 +40,7 @@ DirectGraphicsConfig::DirectGraphicsConfig() {
 //DirectGraphics
 //*******************************************************************
 DirectGraphics* DirectGraphics::thisBase_ = nullptr;
+float DirectGraphics::g_dxCoordsMul_ = 1.0f;
 DirectGraphics::DirectGraphics() {
 	pDirect3D_ = nullptr;
 	pDevice_ = nullptr;
@@ -43,6 +51,9 @@ DirectGraphics::DirectGraphics() {
 
 	camera_ = new DxCamera();
 	camera2D_ = new DxCamera2D();
+
+	defaultRenderTargetSize_[0] = 1024;
+	defaultRenderTargetSize_[1] = 512;
 	
 	stateFog_.bEnable = true;
 	stateFog_.color = D3DXVECTOR4(0, 0, 0, 0);
@@ -90,7 +101,7 @@ bool DirectGraphics::Initialize(HWND hWnd, const DirectGraphicsConfig& config) {
 
 	D3DDEVTYPE deviceType = config.bUseRef_ ? D3DDEVTYPE_REF : D3DDEVTYPE_HAL;
 	deviceCaps_ = deviceType == D3DDEVTYPE_REF ? capsRef : capsHal;
-	if (config.bCheckDeviceCaps_)
+	if (config.bCheckDeviceCaps_ && !config.bUseRef_)
 		_VerifyDeviceCaps();
 
 	bool bDeviceVSyncAvailable = (deviceCaps_.PresentationIntervals & D3DPRESENT_INTERVAL_ONE) != 0;
@@ -104,7 +115,8 @@ bool DirectGraphics::Initialize(HWND hWnd, const DirectGraphicsConfig& config) {
 		float coordRateX = dxBackBufferW / (float)config.sizeScreen_.x;
 		float coordRateY = dxBackBufferH / (float)config.sizeScreen_.y;
 
-		G_DX_COORDS_MUL = std::min(coordRateX, coordRateY);
+		//g_dxCoordsMul_ = std::min(coordRateX, coordRateY);
+		g_dxCoordsMul_ = 1.0f;
 	}
 
 	//Fullscreen mode settings
@@ -421,27 +433,34 @@ void DirectGraphics::_RestoreDxResource() {
 }
 bool DirectGraphics::_Restore() {
 	//The device was lost, wait until it's able to be restored
-	HRESULT hr = pDevice_->TestCooperativeLevel();
-	if (hr == D3DERR_DEVICENOTRESET) {					//The device is now able to be restored
-		::InvalidateRect(hAttachedWindow_, nullptr, false);
+	deviceStatus_ = pDevice_->TestCooperativeLevel();
+	if (deviceStatus_ == D3D_OK) {
+		return true;
+	}
+	else {
+		while ((deviceStatus_ = pDevice_->TestCooperativeLevel()) == D3DERR_DEVICELOST)
+			::Sleep(50);
 
-		_ReleaseDxResource();
+		if (deviceStatus_ == D3DERR_DEVICENOTRESET) {	//The device is now able to be restored
+			::InvalidateRect(hAttachedWindow_, nullptr, false);
 
-		hr = pDevice_->Reset(modeScreen_ == SCREENMODE_FULLSCREEN ? &d3dppFull_ : &d3dppWin_);
-		if (SUCCEEDED(hr)) {
-			deviceStatus_ = hr;
-			_RestoreDxResource();
-			Logger::WriteTop("_Restore: IDirect3DDevice restored.");
-			return true;
+			_ReleaseDxResource();
+
+			deviceStatus_ = pDevice_->Reset(modeScreen_ == SCREENMODE_FULLSCREEN ? &d3dppFull_ : &d3dppWin_);
+			if (SUCCEEDED(deviceStatus_)) {
+				_RestoreDxResource();
+				Logger::WriteTop("_Restore: IDirect3DDevice restored.");
+				return true;
+			}
 		}
+		if (FAILED(deviceStatus_)) {					//Something went terribly wrong
+			std::wstring err = StringUtility::Format(L"_Restore: Unexpected failure [%s; %s]",
+				DXGetErrorString(deviceStatus_), DXGetErrorDescription(deviceStatus_));
+			Logger::WriteTop(err);
+			throw gstd::wexception(err);
+		}
+		return false;
 	}
-	else if (hr != D3DERR_DEVICELOST && FAILED(hr)) {	//Something went terribly wrong
-		std::wstring err = StringUtility::Format(L"_Restore: Unexpected failure [%s; %s]",
-			DXGetErrorString(hr), DXGetErrorDescription(hr));
-		Logger::WriteTop(err);
-		throw gstd::wexception(err);
-	}
-	return false;
 }
 void DirectGraphics::_InitializeDeviceState(bool bResetCamera) {
 	if (bResetCamera) {
@@ -458,7 +477,7 @@ void DirectGraphics::_InitializeDeviceState(bool bResetCamera) {
 			D3DXMatrixLookAtLH(&viewMat, (D3DXVECTOR3*)&viewFrom, &D3DXVECTOR3(0, 0, 0), &D3DXVECTOR3(0, 1, 0));
 
 			D3DXMatrixPerspectiveFovLH(&persMat, D3DXToRadian(45.0),
-				config_.sizeScreen_.x / (float)config_.sizeScreen_.y, 10.0f, 2000.0f);
+				GetRenderScreenWidth() / (float)GetRenderScreenHeight(), 10.0f, 2000.0f);
 
 			viewMat = viewMat * persMat;
 
@@ -487,6 +506,7 @@ void DirectGraphics::_InitializeDeviceState(bool bResetCamera) {
 
 	SetTextureFilter(D3DTEXF_LINEAR, D3DTEXF_LINEAR, D3DTEXF_NONE);
 
+	UpdateDefaultRenderTargetSize();
 	ResetViewPort();
 }
 void DirectGraphics::AddDirectGraphicsListener(DirectGraphicsListener* listener) {
@@ -597,6 +617,7 @@ void DirectGraphics::SetBlendMode(BlendMode mode, int stage) {
 	if (previousBlendMode_ == BlendMode::RESET) {
 		pDevice_->SetTextureStageState(stage, D3DTSS_COLOROP, D3DTOP_MODULATE);
 		pDevice_->SetTextureStageState(stage, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+		pDevice_->SetTextureStageState(stage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
 		pDevice_->SetTextureStageState(stage, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 		pDevice_->SetTextureStageState(stage, D3DTSS_ALPHAARG2, D3DTA_CURRENT);
 		pDevice_->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
@@ -617,7 +638,6 @@ void DirectGraphics::SetBlendMode(BlendMode mode, int stage) {
 
 	switch (mode) {
 	case MODE_BLEND_NONE:		//No blending
-		pDevice_->SetTextureStageState(stage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
 		SETBLENDOP(D3DBLENDOP_ADD, FALSE);
 		SETBLENDARGS(D3DBLEND_ONE, D3DBLEND_ZERO, D3DBLEND_ONE, D3DBLEND_ZERO);
 		break;
@@ -628,7 +648,6 @@ void DirectGraphics::SetBlendMode(BlendMode mode, int stage) {
 		SETBLENDARGS(D3DBLEND_SRCALPHA, D3DBLEND_INVSRCALPHA, D3DBLEND_ONE, D3DBLEND_INVSRCALPHA);
 		break;
 	case MODE_BLEND_ADD_RGB:		//Add - Alpha
-		pDevice_->SetTextureStageState(stage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
 		SETBLENDOP(D3DBLENDOP_ADD, TRUE);
 		SETBLENDARGS(D3DBLEND_ONE, D3DBLEND_ONE, D3DBLEND_ONE, D3DBLEND_ONE);
 		break;
@@ -637,7 +656,6 @@ void DirectGraphics::SetBlendMode(BlendMode mode, int stage) {
 		SETBLENDARGS(D3DBLEND_SRCALPHA, D3DBLEND_ONE, D3DBLEND_ONE, D3DBLEND_INVSRCALPHA);
 		break;
 	case MODE_BLEND_MULTIPLY:		//Multiply
-		pDevice_->SetTextureStageState(stage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
 		SETBLENDOP(D3DBLENDOP_ADD, TRUE);
 		SETBLENDARGS(D3DBLEND_ZERO, D3DBLEND_SRCCOLOR, D3DBLEND_ONE, D3DBLEND_INVSRCALPHA);
 		break;
@@ -646,7 +664,6 @@ void DirectGraphics::SetBlendMode(BlendMode mode, int stage) {
 		SETBLENDARGS(D3DBLEND_SRCALPHA, D3DBLEND_ONE, D3DBLEND_ONE, D3DBLEND_INVSRCALPHA);
 		break;
 	case MODE_BLEND_SHADOW:			//Invert + Multiply
-		pDevice_->SetTextureStageState(stage, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
 		SETBLENDOP(D3DBLENDOP_ADD, TRUE);
 		SETBLENDARGS(D3DBLEND_ZERO, D3DBLEND_INVSRCCOLOR, D3DBLEND_ONE, D3DBLEND_INVSRCALPHA);
 		break;
@@ -789,19 +806,15 @@ void DirectGraphics::SetViewPort(int x, int y, int width, int height) {
 	}
 }
 void DirectGraphics::ResetViewPort() {
-	SetViewPort(0, 0, GetScreenWidth(), GetScreenHeight());
+	SetViewPort(0, 0, GetRenderScreenWidth(), GetRenderScreenHeight());
 }
-LONG DirectGraphics::GetScreenWidth() {
-	return config_.sizeScreen_.x;
-}
-LONG DirectGraphics::GetScreenHeight() {
-	return config_.sizeScreen_.y;
-}
+
 double DirectGraphics::GetScreenWidthRatio() {
 	RECT rect;
 	::GetWindowRect(hAttachedWindow_, &rect);
-	double widthWindow = (double)rect.right - (double)rect.left;
-	double widthView = config_.sizeScreen_.x;
+
+	double widthWindow = rect.right - rect.left;
+	double widthView = GetRenderScreenWidth();
 
 	/*
 	DWORD style = ::GetWindowLong(hAttachedWindow_, GWL_STYLE);
@@ -815,8 +828,9 @@ double DirectGraphics::GetScreenWidthRatio() {
 double DirectGraphics::GetScreenHeightRatio() {
 	RECT rect;
 	::GetWindowRect(hAttachedWindow_, &rect);
-	double heightWindow = (double)rect.bottom - (double)rect.top;
-	double heightView = config_.sizeScreen_.y;
+
+	double heightWindow = rect.bottom - rect.top;
+	double heightView = GetRenderScreenHeight();
 
 	/*
 	DWORD style = ::GetWindowLong(hAttachedWindow_, GWL_STYLE);
@@ -851,12 +865,35 @@ DxRect<LONG> DirectGraphics::ClientSizeToWindowSize(const DxRect<LONG>& rc, Scre
 }
 
 void DirectGraphics::SaveBackSurfaceToFile(const std::wstring& path) {
-	DxRect<LONG> rect(0, 0, config_.sizeScreen_.x, config_.sizeScreen_.y);
+	DxRect<LONG> rect(0, 0, GetRenderScreenWidth(), GetRenderScreenHeight());
 	LPDIRECT3DSURFACE9 pBackSurface = nullptr;
 	pDevice_->GetRenderTarget(0, &pBackSurface);
 	D3DXSaveSurfaceToFile(path.c_str(), D3DXIFF_BMP,
 		pBackSurface, nullptr, (RECT*)&rect);
 	pBackSurface->Release();
+}
+
+void DirectGraphics::UpdateDefaultRenderTargetSize() {
+	size_t baseW = 0;
+	size_t baseH = 0;
+	if (!config_.bUseDynamicScaling_) {
+		baseW = GetScreenWidth();
+		baseH = GetScreenHeight();
+	}
+	else {
+		baseW = config_.sizeScreenDisplay_.x;
+		baseH = config_.sizeScreenDisplay_.y;
+	}
+
+	size_t width = 1U;
+	while (width <= baseW)
+		width = width << 1;
+	size_t height = 1U;
+	while (height <= baseH)
+		height = height << 1;
+
+	defaultRenderTargetSize_[0] = width;
+	defaultRenderTargetSize_[1] = height;
 }
 
 //*******************************************************************
@@ -1064,6 +1101,13 @@ LRESULT DirectGraphicsPrimaryWindow::_WindowProcedure(HWND hWnd, UINT uMsg, WPAR
 		if (wParam == VK_RETURN)
 			this->ChangeScreenMode();
 		return FALSE;
+	}
+	case WM_SYSCOMMAND:
+	{
+		if (wParam == SC_MAXIMIZE) {
+			ChangeScreenMode(SCREENMODE_FULLSCREEN);
+			return TRUE;
+		}
 	}
 	}
 	return _CallPreviousWindowProcedure(hWnd, uMsg, wParam, lParam);
@@ -1346,8 +1390,8 @@ DxCamera2D::DxCamera2D() {
 DxCamera2D::~DxCamera2D() {}
 void DxCamera2D::Reset() {
 	DirectGraphics* graphics = DirectGraphics::GetBase();
-	LONG width = graphics->GetScreenWidth();
-	LONG height = graphics->GetScreenHeight();
+	LONG width = graphics->GetRenderScreenWidth();
+	LONG height = graphics->GetRenderScreenHeight();
 	if (posReset_ == nullptr) {
 		pos_.x = width / 2;
 		pos_.y = height / 2;

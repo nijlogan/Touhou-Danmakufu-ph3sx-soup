@@ -79,6 +79,24 @@ size_t RenderObject::_GetPrimitiveCount(size_t count) {
 	return 0U;
 }
 
+void RenderObject::SetPosition(float x, float y, float z) {
+	position_ = D3DXVECTOR3(x, y, z);
+	D3DXVec3Scale(&position_, &position_, DirectGraphics::g_dxCoordsMul_);
+}
+void RenderObject::SetX(float x) {
+	position_.x = x * DirectGraphics::g_dxCoordsMul_;
+}
+void RenderObject::SetY(float y) {
+	position_.y = y * DirectGraphics::g_dxCoordsMul_;
+}
+void RenderObject::SetZ(float z) {
+	position_.z = z * DirectGraphics::g_dxCoordsMul_;
+}
+void RenderObject::SetScaleXYZ(float sx, float sy, float sz) {
+	scale_ = D3DXVECTOR3(sx, sy, sz);
+	D3DXVec3Scale(&scale_, &scale_, DirectGraphics::g_dxCoordsMul_);
+}
+
 //---------------------------------------------------------------------
 
 D3DXMATRIX RenderObject::CreateWorldMatrix(const D3DXVECTOR3& position, const D3DXVECTOR3& scale,
@@ -92,6 +110,7 @@ D3DXMATRIX RenderObject::CreateWorldMatrix(const D3DXVECTOR3& position, const D3
 
 	bool bScale = scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f;
 	bool bPos = position.x != 0.0f || position.y != 0.0f || position.z != 0.0f;
+
 	if (bScale || bPos) {
 		if (bScale) {
 			DxMath::MatrixApplyScaling(&mat, scale);
@@ -153,10 +172,13 @@ D3DXMATRIX RenderObject::CreateWorldMatrix(const D3DXVECTOR3& position, const D3
 
 		D3DXMatrixRotationYawPitchRoll(&matSRT, angle.y, angle.x, angle.z);
 
-		if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
+		bool bScale = scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f;
+		bool bPos = position.x != 0.0f || position.y != 0.0f || position.z != 0.0f;
+
+		if (bScale) {
 			DxMath::MatrixApplyScaling(&matSRT, scale);
 		}
-		if (position.x != 0.0f || position.y != 0.0f || position.z != 0.0f) {
+		if (bPos) {
 			matSRT._41 = position.x;
 			matSRT._42 = position.y;
 			matSRT._43 = position.z;
@@ -212,14 +234,17 @@ D3DXMATRIX RenderObject::CreateWorldMatrixSprite3D(const D3DXVECTOR3& position, 
 
 	DxMath::ConstructRotationMatrix(&mat, angleX, angleY, angleZ);
 
-	if (scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f) {
+	bool bScale = scale.x != 1.0f || scale.y != 1.0f || scale.z != 1.0f;
+	bool bPos = position.x != 0.0f || position.y != 0.0f || position.z != 0.0f;
+
+	if (bScale) {
 		DxMath::MatrixApplyScaling(&mat, scale);
 	}
 	if (bBillboard) {
 		DirectGraphics* graph = DirectGraphics::GetBase();
 		D3DXMatrixMultiply(&mat, &mat, &graph->GetCamera()->GetViewTransposedMatrix());
 	}
-	if (position.x != 0.0f || position.y != 0.0f || position.z != 0.0f) {
+	if (bPos) {
 		D3DXMATRIX matTrans;
 		D3DXMatrixTranslation(&matTrans, position.x, position.y, position.z);
 		D3DXMatrixMultiply(&mat, &mat, &matTrans);
@@ -463,6 +488,9 @@ void RenderObjectTLX::SetVertexPosition(size_t index, float x, float y, float z,
 	VERTEX_TLX* vertex = GetVertex(index);
 	if (vertex == nullptr) return;
 
+	x *= DirectGraphics::g_dxCoordsMul_;
+	y *= DirectGraphics::g_dxCoordsMul_;
+
 	constexpr float bias = -0.5f;
 	vertex->position.x = x + bias;
 	vertex->position.y = y + bias;
@@ -663,6 +691,9 @@ void RenderObjectLX::SetVertexPosition(size_t index, float x, float y, float z) 
 	VERTEX_LX* vertex = GetVertex(index);
 	if (vertex == nullptr) return;
 
+	x *= DirectGraphics::g_dxCoordsMul_;
+	y *= DirectGraphics::g_dxCoordsMul_;
+
 	constexpr float bias = -0.5f;
 	vertex->position.x = x + bias;
 	vertex->position.y = y + bias;
@@ -838,6 +869,9 @@ void RenderObjectNX::SetVertexPosition(size_t index, float x, float y, float z) 
 	VERTEX_NX* vertex = GetVertex(index);
 	if (vertex == nullptr) return;
 
+	x *= DirectGraphics::g_dxCoordsMul_;
+	y *= DirectGraphics::g_dxCoordsMul_;
+
 	constexpr float bias = -0.5f;
 	vertex->position.x = x + bias;
 	vertex->position.y = y + bias;
@@ -895,10 +929,13 @@ void Sprite2D::SetSourceRect(const DxRect<int>& rcSrc) {
 	SetVertexUV(3, rcSrc.right / width, rcSrc.bottom / height);
 }
 void Sprite2D::SetDestinationRect(const DxRect<double>& rcDest) {
-	SetVertexPosition(0, rcDest.left, rcDest.top);
-	SetVertexPosition(1, rcDest.right, rcDest.top);
-	SetVertexPosition(2, rcDest.left, rcDest.bottom);
-	SetVertexPosition(3, rcDest.right, rcDest.bottom);
+	D3DXVECTOR4 pos = D3DXVECTOR4(rcDest.left, rcDest.top, rcDest.right, rcDest.bottom);
+	//D3DXVec4Scale(&pos, &pos, DirectGraphics::g_dxCoordsMul_);
+
+	SetVertexPosition(0, pos.x, pos.y);
+	SetVertexPosition(1, pos.z, pos.y);
+	SetVertexPosition(2, pos.x, pos.w);
+	SetVertexPosition(3, pos.z, pos.w);
 }
 void Sprite2D::SetVertex(const DxRect<int>& rcSrc, const DxRect<double>& rcDest, D3DCOLOR color) {
 	SetSourceRect(rcSrc);
@@ -1120,10 +1157,13 @@ void SpriteList2D::AddVertex(const D3DXVECTOR2& angX, const D3DXVECTOR2& angY, c
 		D3DXVECTOR4 vPos;
 
 		constexpr float bias = -0.5f;
-		vPos.x = (float)ptrDst[(iVert & 0b1) << 1] + bias;
-		vPos.y = (float)ptrDst[iVert | 0b1] + bias;
+		vPos.x = (float)ptrDst[(iVert & 0b1) << 1];
+		vPos.y = (float)ptrDst[iVert | 0b1];
 		vPos.z = 1.0f;
 		vPos.w = 1.0f;
+
+		vPos.x = vPos.x * DirectGraphics::g_dxCoordsMul_ + bias;
+		vPos.y = vPos.y * DirectGraphics::g_dxCoordsMul_ + bias;
 
 		D3DXVec3TransformCoord((D3DXVECTOR3*)&vPos, (D3DXVECTOR3*)&vPos, &matWorld);
 		vt.position = vPos;
@@ -1196,10 +1236,13 @@ void Sprite3D::SetSourceRect(const DxRect<int>& rcSrc) {
 	SetVertexUV(3, rcSrc.right / width, rcSrc.bottom / height);
 }
 void Sprite3D::SetDestinationRect(const DxRect<double>& rcDest) {
-	SetVertexPosition(0, rcDest.left, rcDest.top, 0);
-	SetVertexPosition(1, rcDest.left, rcDest.bottom, 0);
-	SetVertexPosition(2, rcDest.right, rcDest.top, 0);
-	SetVertexPosition(3, rcDest.right, rcDest.bottom, 0);
+	D3DXVECTOR4 pos = D3DXVECTOR4(rcDest.left, rcDest.top, rcDest.right, rcDest.bottom);
+	//D3DXVec4Scale(&pos, &pos, DirectGraphics::g_dxCoordsMul_);
+
+	SetVertexPosition(0, pos.x, pos.y, 0);
+	SetVertexPosition(1, pos.x, pos.w, 0);
+	SetVertexPosition(2, pos.z, pos.y, 0);
+	SetVertexPosition(3, pos.z, pos.w, 0);
 }
 void Sprite3D::SetVertex(const DxRect<int>& rcSrc, const DxRect<double>& rcDest, D3DCOLOR color) {
 	SetSourceRect(rcSrc);
@@ -1362,9 +1405,18 @@ void ParticleRendererBase::SetInstanceAlpha(int alpha) {
 	ColorAccess::ClampColor(alpha);
 	SetInstanceColor((instColor_ & 0x00ffffff) | ((byte)alpha << 24));
 }
+
+void ParticleRendererBase::SetInstancePosition(const D3DXVECTOR3& pos) {
+	instPosition_ = pos;
+	D3DXVec3Scale(&instPosition_, &instPosition_, DirectGraphics::g_dxCoordsMul_);
+}
+void ParticleRendererBase::SetInstanceScale(const D3DXVECTOR3& scale) {
+	instScale_ = scale;
+	D3DXVec3Scale(&instScale_, &instScale_, DirectGraphics::g_dxCoordsMul_);
+}
 void ParticleRendererBase::SetInstanceScaleSingle(size_t index, float sc) {
 	float* pVec = (float*)&instScale_;
-	pVec[index] = sc;
+	pVec[index] = sc * DirectGraphics::g_dxCoordsMul_;
 }
 void ParticleRendererBase::SetInstanceAngleSingle(size_t index, float ang) {
 	float* pVec = (float*)&instAngle_;
@@ -1421,9 +1473,11 @@ void ParticleRenderer2D::Render() {
 		device->SetVertexDeclaration(shaderManager->GetVertexDeclarationInstancedTLX());
 
 		device->SetStreamSource(0, vertexBuffer->GetBuffer(), 0, sizeof(VERTEX_TLX));
+#ifdef __L_USE_HWINSTANCING
 		device->SetStreamSourceFreq(0, D3DSTREAMSOURCE_INDEXEDDATA | countRenderInstance);
 		device->SetStreamSource(1, instanceBuffer->GetBuffer(), 0, sizeof(VERTEX_INSTANCE));
 		device->SetStreamSourceFreq(1, D3DSTREAMSOURCE_INSTANCEDATA | 1U);
+#endif
 
 		device->SetIndices(indexBuffer->GetBuffer());
 
@@ -1464,14 +1518,26 @@ void ParticleRenderer2D::Render() {
 			effect->Begin(&countPass, 0);
 			for (UINT iPass = 0; iPass < countPass; ++iPass) {
 				effect->BeginPass(iPass);
+
+#ifdef __L_USE_HWINSTANCING
 				device->DrawIndexedPrimitive(typePrimitive_, 0, 0, countVertex, 0, countPrim);
+#else
+				for (UINT nInst = 0; nInst < countRenderInstance; ++nInst) {
+					device->SetStreamSource(1, instanceBuffer->GetBuffer(), 
+						nInst * sizeof(VERTEX_INSTANCE), 0);
+					device->DrawIndexedPrimitive(typePrimitive_, 0, 0, countVertex, 0, countPrim);
+				}
+#endif
+
 				effect->EndPass();
 			}
 			effect->End();
 		}
 
-		device->SetStreamSourceFreq(0, 0);
-		device->SetStreamSourceFreq(1, 0);
+#ifdef __L_USE_HWINSTANCING
+		device->SetStreamSourceFreq(0, 1);
+		device->SetStreamSourceFreq(1, 1);
+#endif
 	}
 }
 ParticleRenderer3D::ParticleRenderer3D() {
@@ -1520,14 +1586,16 @@ void ParticleRenderer3D::Render() {
 			indexBuffer->UpdateBuffer(&lockParam);
 		}
 
+		device->SetVertexDeclaration(shaderManager->GetVertexDeclarationInstancedLX());
+
 		device->SetStreamSource(0, vertexBuffer->GetBuffer(), 0, sizeof(VERTEX_LX));
+#ifdef __L_USE_HWINSTANCING
 		device->SetStreamSourceFreq(0, D3DSTREAMSOURCE_INDEXEDDATA | countRenderInstance);
 		device->SetStreamSource(1, instanceBuffer->GetBuffer(), 0, sizeof(VERTEX_INSTANCE));
 		device->SetStreamSourceFreq(1, D3DSTREAMSOURCE_INSTANCEDATA | 1U);
+#endif
 
 		device->SetIndices(indexBuffer->GetBuffer());
-
-		device->SetVertexDeclaration(shaderManager->GetVertexDeclarationInstancedLX());
 
 		{
 			UINT countPass = 1;
@@ -1585,14 +1653,26 @@ void ParticleRenderer3D::Render() {
 			effect->Begin(&countPass, 0);
 			for (UINT iPass = 0; iPass < countPass; ++iPass) {
 				effect->BeginPass(iPass);
+
+#ifdef __L_USE_HWINSTANCING
 				device->DrawIndexedPrimitive(typePrimitive_, 0, 0, countVertex, 0, countPrim);
+#else
+				for (UINT nInst = 0; nInst < countRenderInstance; ++nInst) {
+					device->SetStreamSource(1, instanceBuffer->GetBuffer(),
+						nInst * sizeof(VERTEX_INSTANCE), 0);
+					device->DrawIndexedPrimitive(typePrimitive_, 0, 0, countVertex, 0, countPrim);
+				}
+#endif
+
 				effect->EndPass();
 			}
 			effect->End();
 		}
 
-		device->SetStreamSourceFreq(0, 0);
-		device->SetStreamSourceFreq(1, 0);
+#ifdef __L_USE_HWINSTANCING
+		device->SetStreamSourceFreq(0, 1);
+		device->SetStreamSourceFreq(1, 1);
+#endif
 	}
 }
 
@@ -1614,6 +1694,25 @@ DxMesh::DxMesh() {
 DxMesh::~DxMesh() {
 	Release();
 }
+
+void DxMesh::SetPosition(float x, float y, float z) {
+	position_ = D3DXVECTOR3(x, y, z);
+	D3DXVec3Scale(&position_, &position_, DirectGraphics::g_dxCoordsMul_);
+}
+void DxMesh::SetX(float x) {
+	position_.x = x * DirectGraphics::g_dxCoordsMul_;
+}
+void DxMesh::SetY(float y) {
+	position_.y = y * DirectGraphics::g_dxCoordsMul_;
+}
+void DxMesh::SetZ(float z) {
+	position_.z = z * DirectGraphics::g_dxCoordsMul_;
+}
+void DxMesh::SetScaleXYZ(float sx, float sy, float sz) {
+	scale_ = D3DXVECTOR3(sx, sy, sz);
+	D3DXVec3Scale(&scale_, &scale_, DirectGraphics::g_dxCoordsMul_);
+}
+
 shared_ptr<DxMeshData> DxMesh::_GetFromManager(const std::wstring& name) {
 	return DxMeshManager::GetBase()->_GetMeshData(name);
 }
@@ -1637,9 +1736,10 @@ void DxMesh::Release() {
 }
 bool DxMesh::CreateFromFile(const std::wstring& path) {
 	try {
-		//path = PathProperty::GetUnique(path);
 		shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(path);
-		if (reader == nullptr) throw gstd::wexception("File not found.");
+		if (reader == nullptr || !reader->Open())
+			throw wexception(ErrorUtility::GetFileNotFoundErrorMessage(PathProperty::ReduceModuleDirectory(path), true));
+
 		return CreateFromFileReader(reader);
 	}
 	catch (gstd::wexception& e) {
@@ -1715,7 +1815,8 @@ void DxMeshManager::_ReleaseMeshData(const std::wstring& name) {
 		auto itr = mapMeshData_.find(name);
 		if (itr != mapMeshData_.end()) {
 			mapMeshData_.erase(itr);
-			Logger::WriteTop(StringUtility::Format(L"DxMeshManager: Mesh released. [%s]", name.c_str()));
+			Logger::WriteTop(StringUtility::Format(L"DxMeshManager: Mesh released. [%s]", 
+				PathProperty::ReduceModuleDirectory(name).c_str()));
 		}
 	}
 }
@@ -1789,16 +1890,18 @@ void DxMeshManager::CallFromLoadThread(shared_ptr<FileManager::LoadThreadEvent> 
 		shared_ptr<DxMeshData> data = mesh->data_;
 		if (data->bLoad_) return;
 
+		std::wstring pathReduce = PathProperty::ReduceModuleDirectory(path);
+
 		bool res = false;
 		shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(path);
-		if (reader != nullptr && reader->Open()) {
+		if (reader != nullptr && reader->Open())
 			res = data->CreateFromFileReader(reader);
-		}
+
 		if (res) {
-			Logger::WriteTop(StringUtility::Format(L"Mesh loaded.(LT) [%s]", path.c_str()));
+			Logger::WriteTop(StringUtility::Format(L"DxMeshManager(LT): Mesh loaded. [%s]", pathReduce.c_str()));
 		}
 		else {
-			Logger::WriteTop(StringUtility::Format(L"Failed to load mesh.(LT) [%s]", path.c_str()));
+			Logger::WriteTop(StringUtility::Format(L"DxMeshManager(LT): Failed to load mesh \"%s\"", pathReduce.c_str()));
 		}
 		data->bLoad_ = true;
 	}
@@ -1823,8 +1926,8 @@ bool DxMeshInfoPanel::_AddedLogger(HWND hTab) {
 	wndListView_.Create(hWnd_, styleListView);
 
 	wndListView_.AddColumn(64, ROW_ADDRESS, L"Address");
-	wndListView_.AddColumn(96, ROW_NAME, L"Name");
-	wndListView_.AddColumn(48, ROW_FULLNAME, L"FullName");
+	wndListView_.AddColumn(128, ROW_NAME, L"Name");
+	wndListView_.AddColumn(128, ROW_FULLNAME, L"FullName");
 	wndListView_.AddColumn(32, ROW_COUNT_REFFRENCE, L"Ref");
 
 	Start();
@@ -1878,8 +1981,10 @@ void DxMeshInfoPanel::Update(DxMeshManager* manager) {
 
 	for (int iRow = 0; iRow < wndListView_.GetRowCount();) {
 		std::wstring key = wndListView_.GetText(iRow, ROW_ADDRESS);
-		if (setKey.find(key) != setKey.end())++iRow;
-		else wndListView_.DeleteRow(iRow);
+		if (setKey.find(key) != setKey.end())
+			++iRow;
+		else
+			wndListView_.DeleteRow(iRow);
 	}
 }
 

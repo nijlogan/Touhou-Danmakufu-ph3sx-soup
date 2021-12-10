@@ -29,9 +29,13 @@ namespace directx {
 		int priRender_;
 		bool bVisible_;
 		bool bDeleted_;
+		bool bQueuedToDelete_;
 		bool bActive_;
+		bool bAutoDeleteEnable_;
+		int frameExist_;
 
-		std::unordered_map<size_t, gstd::value> mapObjectValue_;
+		std::unordered_map<std::wstring, gstd::value> mapObjectValue_;
+		std::unordered_map<int64_t, gstd::value> mapObjectValueI_;
 	public:
 		DxScriptObjectBase();
 		virtual ~DxScriptObjectBase();
@@ -40,8 +44,8 @@ namespace directx {
 		
 		virtual void Initialize() {}
 		virtual void Work() {}
-		virtual void Render() = 0;
-		virtual void SetRenderState() = 0;
+		virtual void Render() {}
+		virtual void SetRenderState() {}
 		virtual void CleanUp() {}
 
 		virtual bool HasNormalRendering() { return false; }
@@ -49,6 +53,8 @@ namespace directx {
 		int GetObjectID() { return idObject_; }
 		TypeObject GetObjectType() { return typeObject_; }
 		int64_t GetScriptID() { return idScript_; }
+		void QueueDelete() { bQueuedToDelete_ = true; }
+		bool IsQueuedForDeletion() { return bQueuedToDelete_; }
 		bool IsDeleted() { return bDeleted_; }
 		bool IsActive() { return bActive_; }
 		void SetActive(bool bActive) { bActive_ = bActive; }
@@ -58,24 +64,13 @@ namespace directx {
 		int GetRenderPriorityI() { return priRender_; }
 		void SetRenderPriority(double pri);
 		void SetRenderPriorityI(int pri) { priRender_ = pri; }
+		void SetAutoDeleteEnable(bool del) { bAutoDeleteEnable_ = del; }
+		bool IsAutoDeleteEnable() { return bAutoDeleteEnable_; }
 
-		bool IsObjectValueExists(size_t hash) { return mapObjectValue_.find(hash) != mapObjectValue_.end(); }
-		gstd::value GetObjectValue(size_t hash) { return mapObjectValue_[hash]; }
-		void SetObjectValue(size_t hash, gstd::value val) { mapObjectValue_[hash] = val; }
-		void DeleteObjectValue(size_t hash) { mapObjectValue_.erase(hash); }
+		int GetExistFrame() { return frameExist_; }
 
-		template<typename T>
-		static inline const size_t GetKeyHash(const T& hash) {
-			return std::hash<T>{}(hash);
-		}
-		static inline const size_t GetKeyHashI64(int64_t key) {
-			return ((size_t)(key >> 32) ^ 0xe45f6701) + (size_t)(key & 0xffffffff);
-		}
-
-		bool IsObjectValueExists(const std::wstring& key) { return IsObjectValueExists(GetKeyHash(key)); }
-		gstd::value GetObjectValue(const std::wstring& key) { return GetObjectValue(GetKeyHash(key)); }
-		void SetObjectValue(const std::wstring& key, gstd::value val) { SetObjectValue(GetKeyHash(key), val); }
-		void DeleteObjectValue(const std::wstring& key) { DeleteObjectValue(GetKeyHash(key)); }
+		std::unordered_map<std::wstring, gstd::value>* GetValueMap() { return &mapObjectValue_; }
+		std::unordered_map<int64_t, gstd::value>* GetValueMapI() { return &mapObjectValueI_; }
 	};
 
 	//****************************************************************************
@@ -497,6 +492,7 @@ namespace directx {
 		void SetMaxHeight(LONG height) { text_.SetMaxHeight(height); change_ = CHANGE_ALL; }
 		void SetLinePitch(float pitch) { text_.SetLinePitch(pitch); change_ = CHANGE_ALL; }
 		void SetSidePitch(float pitch) { text_.SetSidePitch(pitch); change_ = CHANGE_ALL; }
+		void SetFixedWidth(float width) { text_.SetFixedWidth(width); change_ = CHANGE_ALL; }
 		void SetHorizontalAlignment(TextAlignment value) { text_.SetHorizontalAlignment(value); change_ = CHANGE_ALL; }
 		void SetVerticalAlignment(TextAlignment value) { text_.SetVerticalAlignment(value); change_ = CHANGE_ALL; }
 		void SetPermitCamera(bool bPermit) { text_.SetPermitCamera(bPermit); }
@@ -705,6 +701,8 @@ namespace directx {
 
 		void ClearObject();
 		void DeleteObjectByScriptID(int64_t idScript);
+		void OrphanObjectByScriptID(int64_t idScript);
+		std::vector<int> GetObjectByScriptID(int64_t idScript);
 
 		void AddRenderObject(ref_unsync_ptr<DxScriptObjectBase> obj);
 		void WorkObject();

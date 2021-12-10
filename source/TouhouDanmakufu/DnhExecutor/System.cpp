@@ -58,6 +58,12 @@ void SystemController::ShowErrorDialog(const std::wstring& msg) {
 	ErrorDialog dialog(hParent);
 	dialog.ShowModal(msg);
 }
+void SystemController::ResetWindowTitle() {
+	EDirectGraphics* window = EDirectGraphics::GetInstance();
+	DnhConfiguration* config = DnhConfiguration::GetInstance();
+	std::wstring& title = config->windowTitle_;
+	::SetWindowText(window->GetParentHWND(), title.c_str());
+}
 
 //*******************************************************************
 //SceneManager
@@ -366,7 +372,8 @@ void SystemInformation::_SearchFreePlayerScript(const std::wstring& dir) {
 	listFreePlayer_ = ScriptInformation::FindPlayerScriptInformationList(dir);
 	for (ref_count_ptr<ScriptInformation> info : listFreePlayer_) {
 		const std::wstring& path = info->GetScriptPath();
-		std::wstring log = StringUtility::Format(L"Found free player script: [%s]", path.c_str());
+		std::wstring log = StringUtility::Format(L"Found free player script: [%s]", 
+			PathProperty::ReduceModuleDirectory(path).c_str());
 		ELogger::WriteTop(log);
 	}
 }

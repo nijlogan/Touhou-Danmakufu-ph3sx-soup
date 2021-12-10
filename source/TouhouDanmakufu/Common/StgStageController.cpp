@@ -150,7 +150,8 @@ void StgStageController::Initialize(ref_count_ptr<StgStageStartData> startData) 
 	ref_count_ptr<ScriptInformation> infoMain = infoStage_->GetMainScriptInformation();
 	std::wstring dirInfo = PathProperty::GetFileDirectory(infoMain->GetScriptPath());
 
-	ELogger::WriteTop(StringUtility::Format(L"Main script: [%s]", infoMain->GetScriptPath().c_str()));
+	ELogger::WriteTop(StringUtility::Format(L"Main script: [%s]", 
+		PathProperty::ReduceModuleDirectory(infoMain->GetScriptPath()).c_str()));
 
 	{
 		std::wstring pathSystemScript = infoMain->GetSystemPath();
@@ -158,7 +159,8 @@ void StgStageController::Initialize(ref_count_ptr<StgStageStartData> startData) 
 			pathSystemScript = EPathProperty::GetStgDefaultScriptDirectory() + L"Default_System.txt";
 		if (pathSystemScript.size() > 0) {
 			pathSystemScript = EPathProperty::ExtendRelativeToFull(dirInfo, pathSystemScript);
-			ELogger::WriteTop(StringUtility::Format(L"System script: [%s]", pathSystemScript.c_str()));
+			ELogger::WriteTop(StringUtility::Format(L"System script: [%s]", 
+				PathProperty::ReduceModuleDirectory(pathSystemScript).c_str()));
 
 			auto script = scriptManager_->LoadScript(pathSystemScript, StgStageScript::TYPE_SYSTEM);
 			scriptManager_->StartScript(script);
@@ -170,7 +172,8 @@ void StgStageController::Initialize(ref_count_ptr<StgStageStartData> startData) 
 	const std::wstring& pathPlayerScript = infoPlayer->GetScriptPath();
 
 	if (pathPlayerScript.size() > 0) {
-		ELogger::WriteTop(StringUtility::Format(L"Player script: [%s]", pathPlayerScript.c_str()));
+		ELogger::WriteTop(StringUtility::Format(L"Player script: [%s]", 
+			PathProperty::ReduceModuleDirectory(pathPlayerScript).c_str()));
 		int idPlayer = scriptManager_->GetObjectManager()->CreatePlayerObject();
 		objPlayer = ref_unsync_ptr<StgPlayerObject>::Cast(GetMainRenderObject(idPlayer));
 
@@ -218,7 +221,8 @@ void StgStageController::Initialize(ref_count_ptr<StgStageStartData> startData) 
 			pathBack = L"";
 		if (pathBack.size() > 0) {
 			pathBack = EPathProperty::ExtendRelativeToFull(dirInfo, pathBack);
-			ELogger::WriteTop(StringUtility::Format(L"Background script: [%s]", pathBack.c_str()));
+			ELogger::WriteTop(StringUtility::Format(L"Background script: [%s]", 
+				PathProperty::ReduceModuleDirectory(pathBack).c_str()));
 			auto script = scriptManager_->LoadScript(pathBack, StgStageScript::TYPE_STAGE);
 			scriptManager_->StartScript(script);
 		}
@@ -230,7 +234,8 @@ void StgStageController::Initialize(ref_count_ptr<StgStageStartData> startData) 
 			pathBGM = L"";
 		if (pathBGM.size() > 0) {
 			pathBGM = EPathProperty::ExtendRelativeToFull(dirInfo, pathBGM);
-			ELogger::WriteTop(StringUtility::Format(L"BGM: [%s]", pathBGM.c_str()));
+			ELogger::WriteTop(StringUtility::Format(L"BGM: [%s]", 
+				PathProperty::ReduceModuleDirectory(pathBGM).c_str()));
 			shared_ptr<SoundPlayer> player = DirectSoundManager::GetBase()->GetPlayer(pathBGM);
 			if (player) {
 				player->SetAutoDelete(true);
@@ -486,10 +491,14 @@ StgStageInformation::StgStageInformation() {
 StgStageInformation::~StgStageInformation() {}
 void StgStageInformation::SetStgFrameRect(const DxRect<LONG>& rect, bool bUpdateFocusResetValue) {
 	rcStgFrame_ = rect;
+	rcStgFrame_.left *= DirectGraphics::g_dxCoordsMul_;
+	rcStgFrame_.right *= DirectGraphics::g_dxCoordsMul_;
+	rcStgFrame_.top *= DirectGraphics::g_dxCoordsMul_;
+	rcStgFrame_.bottom *= DirectGraphics::g_dxCoordsMul_;
 
 	ref_count_ptr<D3DXVECTOR2> pos = new D3DXVECTOR2;
-	pos->x = (rect.right - rect.left) / 2.0f;
-	pos->y = (rect.bottom - rect.top) / 2.0f;
+	pos->x = (rcStgFrame_.right - rcStgFrame_.left) / 2.0f;
+	pos->y = (rcStgFrame_.bottom - rcStgFrame_.top) / 2.0f;
 
 	if (bUpdateFocusResetValue) {
 		DirectGraphics* graphics = DirectGraphics::GetBase();

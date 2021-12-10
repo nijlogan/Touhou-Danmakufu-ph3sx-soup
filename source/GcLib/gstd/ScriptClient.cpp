@@ -54,6 +54,13 @@ static const std::vector<function> commonFunction = {
 	{ "GetScriptArgumentCount", ScriptClientBase::Func_GetScriptArgumentCount, 0 },
 	{ "SetScriptResult", ScriptClientBase::Func_SetScriptResult, 1 },
 
+	//Floating point functions
+	{ "Float_Classify", ScriptClientBase::Float_Classify, 1 },
+	{ "Float_IsNan", ScriptClientBase::Float_IsNan, 1 },
+	{ "Float_IsInf", ScriptClientBase::Float_IsInf, 1 },
+	{ "Float_GetSign", ScriptClientBase::Float_GetSign, 1 },
+	{ "Float_CopySign", ScriptClientBase::Float_CopySign, 2 },
+
 	//Math functions
 	{ "min", ScriptClientBase::Func_Min, 2 },
 	{ "max", ScriptClientBase::Func_Max, 2 },
@@ -195,8 +202,16 @@ static const std::vector<function> commonFunction = {
 	{ "StringFormat", ScriptClientBase::Func_StringFormat, -4 },	//2 fixed + ... -> 3 minimum
 	{ "atoi", ScriptClientBase::Func_AtoI, 1 },
 	{ "ator", ScriptClientBase::Func_AtoR, 1 },
+	{ "ToUpper", ScriptClientBase::Func_RecaseString<towupper>, 1 },
+	{ "ToLower", ScriptClientBase::Func_RecaseString<towlower>, 1 },
+	{ "IsUpper", ScriptClientBase::Func_ClassifyString<iswupper>, 1 },
+	{ "IsLower", ScriptClientBase::Func_ClassifyString<iswlower>, 1 },
+	{ "IsAlpha", ScriptClientBase::Func_ClassifyString<iswalpha>, 1 },
+	{ "IsAlnum", ScriptClientBase::Func_ClassifyString<iswalnum>, 1 },
+	{ "IsAscii", ScriptClientBase::Func_ClassifyString<iswascii>, 1 },
 	{ "TrimString", ScriptClientBase::Func_TrimString, 1 },
 	{ "SplitString", ScriptClientBase::Func_SplitString, 2 },
+	{ "SplitString2", ScriptClientBase::Func_SplitString2, 2 },
 
 	{ "RegexMatch", ScriptClientBase::Func_RegexMatch, 2 },
 	{ "RegexMatchRepeated", ScriptClientBase::Func_RegexMatchRepeated, 2 },
@@ -273,6 +288,16 @@ static const std::vector<function> commonFunction = {
 };
 static const std::vector<constant> commonConstant = {
 	constant("NULL", 0i64),
+
+	constant("INF", INFINITY),
+	constant("NAN", NAN),
+
+	//Types for Float_Classify
+	constant("FLOAT_TYPE_SUBNORMAL", FP_SUBNORMAL),
+	constant("FLOAT_TYPE_NORMAL", FP_NORMAL),
+	constant("FLOAT_TYPE_ZERO", FP_ZERO),
+	constant("FLOAT_TYPE_INFINITY", FP_INFINITE),
+	constant("FLOAT_TYPE_NAN", FP_NAN),
 
 	//Types for typeof and ftypeof
 	constant("VAR_INT", type_data::tk_int),
@@ -413,10 +438,10 @@ std::wstring ScriptClientBase::_GetErrorLineSource(int line) {
 	size_t size = std::min(DISP_MAX, (size_t)(pEnd - pStr));
 	return Encoding::BytesToWString(pStr, size, encoding);
 }
-std::vector<char> ScriptClientBase::_ParsePreprocessors(std::vector<char>& source) {
+std::vector<char> ScriptClientBase::_ParseScriptSource(std::vector<char>& source) {
 	ScriptLoader scriptLoader(this, engine_->GetPath(), source);
 
-	scriptLoader.ParsePreprocessors();
+	scriptLoader.Parse();
 	engine_->SetScriptFileLineMap(scriptLoader.GetLineMap());
 
 	return scriptLoader.GetResult();
@@ -463,7 +488,7 @@ void ScriptClientBase::SetSource(std::vector<char>& source) {
 }
 void ScriptClientBase::Compile() {
 	if (engine_->GetEngine() == nullptr) {
-		std::vector<char> source = _ParsePreprocessors(engine_->GetSource());
+		std::vector<char> source = _ParseScriptSource(engine_->GetSource());
 		engine_->SetSource(source);
 
 		bool bCreateSuccess = _CreateEngine();
@@ -670,7 +695,30 @@ value ScriptClientBase::Func_SetScriptResult(script_machine* machine, int argc, 
 	return value();
 }
 
-//組み込み関数：数学系
+//Floating point functions
+value ScriptClientBase::Float_Classify(script_machine* machine, int argc, const value* argv) {
+	double f = argv[0].as_real();
+	return CreateIntValue(std::fpclassify(f));
+}
+value ScriptClientBase::Float_IsNan(script_machine* machine, int argc, const value* argv) {
+	double f = argv[0].as_real();
+	return CreateBooleanValue(std::isnan(f));
+}
+value ScriptClientBase::Float_IsInf(script_machine* machine, int argc, const value* argv) {
+	double f = argv[0].as_real();
+	return CreateBooleanValue(std::isinf(f));
+}
+value ScriptClientBase::Float_GetSign(script_machine* machine, int argc, const value* argv) {
+	double f = argv[0].as_real();
+	return CreateRealValue(std::signbit(f) ? -1.0 : 1.0);
+}
+value ScriptClientBase::Float_CopySign(script_machine* machine, int argc, const value* argv) {
+	double src = argv[0].as_real();
+	double dst = argv[1].as_real();
+	return CreateRealValue(std::copysign(src, dst));
+}
+
+//Maths functions
 value ScriptClientBase::Func_Min(script_machine* machine, int argc, const value* argv) {
 	double v1 = argv[0].as_real();
 	double v2 = argv[1].as_real();
@@ -826,7 +874,7 @@ value ScriptClientBase::Func_RAcot(script_machine* machine, int argc, const valu
 
 value ScriptClientBase::Func_Cas(script_machine* machine, int argc, const value* argv) {
 	double scArray[2];
-	Math::DoSinCos(Math::RadianToDegree(argv->as_real()), scArray);
+	Math::DoSinCos(Math::DegreeToRadian(argv->as_real()), scArray);
 	return CreateRealValue(scArray[0] + scArray[1]);
 }
 value ScriptClientBase::Func_RCas(script_machine* machine, int argc, const value* argv) {
@@ -1643,6 +1691,37 @@ value ScriptClientBase::Func_AtoR(script_machine* machine, int argc, const value
 	double num = StringUtility::ToDouble(str);
 	return CreateRealValue(num);
 }
+template<wint_t (*func)(wint_t)>
+value ScriptClientBase::Func_RecaseString(script_machine* machine, int argc, const value* argv) {
+	if (argv->get_type()->get_kind() == type_data::type_kind::tk_array) {
+		std::wstring str = argv->as_string();
+		for (auto& ch : str) ch = func(ch);
+		return CreateStringValue(str);
+	}
+	else {
+		wchar_t ch = argv->as_char();
+		return CreateCharValue(func(ch));
+	}
+}
+template<int (*func)(wint_t)>
+value ScriptClientBase::Func_ClassifyString(script_machine* machine, int argc, const value* argv) {
+	bool res = true;
+	if (argv->get_type()->get_kind() == type_data::type_kind::tk_array) {
+		std::wstring str = argv->as_string();
+		for (auto& ch : str) {
+			if (!func(ch)) {
+				res = false;
+				break;
+			}
+		}
+	}
+	else {
+		wchar_t ch = argv->as_char();
+		res = func(ch);
+	}
+	return CreateBooleanValue(res);
+}
+
 value ScriptClientBase::Func_TrimString(script_machine* machine, int argc, const value* argv) {
 	std::wstring res = StringUtility::Trim(argv->as_string());
 	return CreateStringValue(res);
@@ -1650,6 +1729,11 @@ value ScriptClientBase::Func_TrimString(script_machine* machine, int argc, const
 value ScriptClientBase::Func_SplitString(script_machine* machine, int argc, const value* argv) {
 	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
 	std::vector<std::wstring> list = StringUtility::Split(argv[0].as_string(), argv[1].as_string());
+	return script->CreateStringArrayValue(list);
+}
+value ScriptClientBase::Func_SplitString2(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	std::vector<std::wstring> list = StringUtility::SplitPattern(argv[0].as_string(), argv[1].as_string());
 	return script->CreateStringArrayValue(list);
 }
 
@@ -1725,12 +1809,10 @@ value ScriptClientBase::Func_DigitToArray(script_machine* machine, int argc, con
 }
 value ScriptClientBase::Func_GetDigitCount(script_machine* machine, int argc, const value* argv) {
 	int64_t input = argv[0].as_int();
-	size_t res = 0;
 
-	for (size_t i = 0; input != 0; ++i) {
-		res++;
-		input /= 10;
-	}
+	input = std::max(std::abs(input), 1i64);
+
+	size_t res = (size_t)log10(input) + 1;
 
 	return CreateIntValue(res);
 }
@@ -2497,7 +2579,7 @@ bool ScriptLoader::_SkipToNextValidLine() {
 	return tok->GetType() != Token::Type::TK_EOF;
 }
 
-void ScriptLoader::ParsePreprocessors() {
+void ScriptLoader::Parse() {
 	try {
 		scanner_->Next();
 		_ParseIfElse();
@@ -2506,6 +2588,8 @@ void ScriptLoader::ParsePreprocessors() {
 		_ResetScanner(0);
 		scanner_->Next();
 		_ParseInclude();
+
+		_ConvertToEncoding(Encoding::UTF16LE);
 
 		if (false) {
 			std::wstring pathTest = PathProperty::GetModuleDirectory() +
@@ -2618,7 +2702,7 @@ void ScriptLoader::_ParseInclude() {
 										if (countMbRes == 0) {
 											std::wstring error = StringUtility::Format(L"Error reading include file. "
 												"(%s -> UTF-8) [%s]\r\n",
-												includeEncoding == Encoding::UTF16LE ? L"UTF-16 LE" : L"UTF-16 BE", wPath.c_str());
+												Encoding::WStringRepresentation(includeEncoding), wPath.c_str());
 											_RaiseError(scanner_->GetCurrentLine(), error);
 										}
 
@@ -2645,7 +2729,7 @@ void ScriptLoader::_ParseInclude() {
 										if (countWRes == 0) {
 											std::wstring error = StringUtility::Format(L"Error reading include file. "
 												"(UTF-8 -> %s) [%s]\r\n",
-												encoding_ == Encoding::UTF16LE ? L"UTF-16 LE" : L"UTF-16 BE", wPath.c_str());
+												Encoding::WStringRepresentation(encoding_), wPath.c_str());
 											_RaiseError(scanner_->GetCurrentLine(), error);
 										}
 
@@ -2805,6 +2889,91 @@ void ScriptLoader::_ParseIfElse() {
 		}
 		if (!_SkipToNextValidLine()) break;
 	}
+}
+
+void ScriptLoader::_ConvertToEncoding(Encoding::Type targetEncoding) {
+	if (encoding_ == targetEncoding) return;
+
+	size_t orgCharSize = Encoding::GetCharSize(encoding_);
+	size_t newCharSize = Encoding::GetCharSize(targetEncoding);
+	size_t orgBomSize = Encoding::GetBomSize(encoding_);
+	size_t newBomSize = Encoding::GetBomSize(targetEncoding);
+
+	std::vector<char> newSource;
+	if (newBomSize > 0) {
+		newSource.resize(newBomSize);
+		memcpy(newSource.data(), Encoding::GetBom(targetEncoding), newBomSize);
+	}
+	
+	if (orgCharSize == 2 && newCharSize == 1) {
+		//From UTF16(LE/BE) to UTF8(BOM)
+
+		//Skip src BOM
+		std::vector<char> tmpWch(src_.begin() + orgBomSize, src_.end());
+		if (encoding_ == Encoding::UTF16BE) {
+			//Src is UTF16BE, swap bytes
+			for (auto wItr = tmpWch.begin(); wItr != tmpWch.end(); wItr += 2) {
+				std::swap(*wItr, *(wItr + 1));
+			}
+		}
+
+		std::vector<char> placement;
+		size_t countRes = StringUtility::ConvertWideToMulti((wchar_t*)tmpWch.data(),
+			tmpWch.size(), placement, CP_UTF8);
+		if (countRes == 0) {
+			std::wstring error = StringUtility::Format(L"Error converting script encoding. "
+				"(%s -> %s) [%s]\r\n",
+				Encoding::WStringRepresentation(encoding_), 
+				Encoding::WStringRepresentation(targetEncoding), pathSource_.c_str());
+			_RaiseError(0, error);
+		}
+
+		newSource.insert(newSource.end(), placement.begin(), placement.end());
+	}
+	else if (orgCharSize == 1 && newCharSize == 2) {
+		//From UTF8(BOM) to UTF16(LE/BE)
+
+		//Skip src BOM
+		std::vector<char> tmpCh(src_.begin() + orgBomSize, src_.end());
+
+		std::vector<char> placement;
+		size_t countRes = StringUtility::ConvertMultiToWide(tmpCh.data(),
+			tmpCh.size(), placement, CP_UTF8);
+		if (countRes == 0) {
+			std::wstring error = StringUtility::Format(L"Error converting script encoding. "
+				"(%s -> %s) [%s]\r\n",
+				Encoding::WStringRepresentation(encoding_),
+				Encoding::WStringRepresentation(targetEncoding), pathSource_.c_str());
+			_RaiseError(0, error);
+		}
+
+		if (targetEncoding == Encoding::UTF16BE) {
+			//Dest is UTF16BE, swap bytes
+			for (auto wItr = placement.begin(); wItr != placement.end(); wItr += 2) {
+				std::swap(*wItr, *(wItr + 1));
+			}
+		}
+		newSource.insert(newSource.end(), placement.begin(), placement.end());
+	}
+	else {
+		//From UTF8(BOM) to UTF8(BOM) or UTF16(LE/BE) to UTF16(LE/BE)
+
+		std::vector<char> placement(src_.begin() + orgBomSize, src_.end());
+		if ((encoding_ == Encoding::UTF16LE && targetEncoding == Encoding::UTF16BE)
+			|| (encoding_ == Encoding::UTF16BE && targetEncoding == Encoding::UTF16LE)) 
+		{
+			//Swap byte order
+			for (auto wItr = placement.begin(); wItr != placement.end(); wItr += 2) {
+				std::swap(*wItr, *(wItr + 1));
+			}
+		}
+
+		newSource.insert(newSource.end(), placement.begin(), placement.end());
+	}
+
+	src_ = newSource;
+	encoding_ = targetEncoding;
+	charSize_ = newCharSize;
 }
 
 //****************************************************************************

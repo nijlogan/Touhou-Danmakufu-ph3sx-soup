@@ -92,6 +92,8 @@ public:
 		INFO_DAMAGE_RATE_SHOT,
 		INFO_DAMAGE_RATE_SPELL,
 		INFO_SHOT_HIT_COUNT,
+		INFO_MAXIMUM_DAMAGE,
+		INFO_DAMAGE_PREVIOUS_FRAME,
 
 		//ObjEnemyBossScene_GetInfo
 		INFO_TIMER,
@@ -340,14 +342,51 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjMove_SetSpeedXY);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_SetProcessMovement);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_GetProcessMovement);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_GetMoveFrame);
+
+	// Move object + move parent
+	DNH_FUNCAPI_DECL_(Func_ObjMove_GetParent);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_RemoveParent);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_SetRelativePosition);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_UpdateRelativePosition);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_GetDistanceFromParent);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_GetAngleFromParent);
+
+	// Move parents
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_Create);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetParentObject);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_GetParentObject);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetAutoDelete);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_AddChild);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_GetChildren);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_RemoveChildren);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetPositionOffset);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetPositionOffsetCircle);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetTransformScale);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetTransformScaleX);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetTransformScaleY);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetTransformAngle);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_GetTransformScaleX);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_GetTransformScaleY);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_GetTransformAngle);
+	// DNH_FUNCAPI_DECL_(Func_ObjMoveParent_GetRadiusAtAngle);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetChildAngleMode);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetChildMotionEnable);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetChildMotionTransformEnable);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetLaserRotationEnable);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetTransformOrder);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_ApplyTransformation);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_ResetTransformation);
 
 	//STG共通関数：敵オブジェクト操作
 	static gstd::value Func_ObjEnemy_Create(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjEnemy_Regist(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjEnemy_GetInfo(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjEnemy_SetLife(gstd::script_machine* machine, int argc, const gstd::value* argv);
+	template<bool CHECK_MAX_DMG>
 	static gstd::value Func_ObjEnemy_AddLife(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjEnemy_SetDamageRate(gstd::script_machine* machine, int argc, const gstd::value* argv);
+	static gstd::value Func_ObjEnemy_SetMaximumDamage(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjEnemy_AddIntersectionCircleA(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjEnemy_SetIntersectionCircleToShot(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjEnemy_SetIntersectionCircleToPlayer(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -433,15 +472,19 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjStLaser_SetPermitExpand);
 	DNH_FUNCAPI_DECL_(Func_ObjStLaser_GetPermitExpand);
 	static gstd::value Func_ObjCrLaser_SetTipDecrement(gstd::script_machine* machine, int argc, const gstd::value* argv);
+	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetTipCapping);
+	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetAngleSmoothing);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_GetNodePointer);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_GetNodePointerList);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_GetNodePosition);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_GetNodeAngle);
+	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_GetNodeRenderWidth);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_GetNodeColor);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_GetNodeColorHex);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetNode);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetNodePosition);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetNodeAngle);
+	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetNodeRenderWidth);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetNodeColor);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_AddNode);
 
@@ -449,6 +492,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_Fire);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_FireReturn);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetParentObject);
+	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetAutoDelete);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetPatternType);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetShotType);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetInitialBlendMode);

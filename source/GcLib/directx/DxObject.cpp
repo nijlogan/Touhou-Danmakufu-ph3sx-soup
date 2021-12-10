@@ -17,11 +17,14 @@ DxScriptObjectBase::DxScriptObjectBase() {
 	bVisible_ = true;
 	priRender_ = 50;
 	bDeleted_ = false;
+	bQueuedToDelete_ = false;
 	bActive_ = false;
+	bAutoDeleteEnable_ = true;
+	frameExist_ = 0;
 	manager_ = nullptr;
 	idObject_ = DxScript::ID_INVALID;
 	idScript_ = ScriptClientBase::ID_SCRIPT_FREE;
-	typeObject_ = TypeObject::Invalid;
+	typeObject_ = TypeObject::Base;
 }
 DxScriptObjectBase::~DxScriptObjectBase() {
 	//if (manager_ != nullptr && idObject_ != DxScript::ID_INVALID)
@@ -1289,7 +1292,7 @@ DWORD DxBinaryFileObject::Write(LPVOID data, size_t size) {
 DxScriptObjectManager::FogData DxScriptObjectManager::fogData_ = { false, 0xffffffff, 0, 0 };
 DxScriptObjectManager::DxScriptObjectManager() {
 	SetMaxObject(DEFAULT_CONTAINER_CAPACITY);
-	SetRenderBucketCapacity(128);
+	SetRenderBucketCapacity(101);
 
 	totalObjectCreateCount_ = 0U;
 }
@@ -1385,14 +1388,15 @@ DxScriptObjectBase* DxScriptObjectManager::GetObjectPointer(int id) {
 void DxScriptObjectManager::DeleteObject(int id) {
 	if (id < 0 || id >= obj_.size()) return;
 
-	ref_unsync_ptr<DxScriptObjectBase> ptr = obj_[id];	//Copy
-	if (ptr == nullptr) return;
+	ref_unsync_ptr<DxScriptObjectBase> pObj = obj_[id];
+	if (pObj == nullptr) return;
 
-	ptr->bDeleted_ = true;
+	pObj->bDeleted_ = true;
+	if (pObj->manager_)
+		pObj->manager_->listUnusedIndex_.push_back(id);
+
 	obj_[id] = nullptr;
-
-	if (ptr->manager_)
-		ptr->manager_->listUnusedIndex_.push_back(id);
+	pObj->idObject_ = DxScript::ID_INVALID;
 }
 void DxScriptObjectManager::DeleteObject(ref_unsync_ptr<DxScriptObjectBase> obj) {
 	DxScriptObjectManager::DeleteObject(obj.get());
@@ -1400,13 +1404,7 @@ void DxScriptObjectManager::DeleteObject(ref_unsync_ptr<DxScriptObjectBase> obj)
 void DxScriptObjectManager::DeleteObject(DxScriptObjectBase* obj) {
 	if (obj == nullptr) return;
 
-	obj->bDeleted_ = true;
-	obj_[obj->GetObjectID()] = nullptr;
-
-	if (obj->manager_)
-		obj->manager_->listUnusedIndex_.push_back(obj->GetObjectID());
-
-	obj->idObject_ = DxScript::ID_INVALID;
+	DeleteObject(obj->idObject_);
 }
 void DxScriptObjectManager::ClearObject() {
 	std::fill(obj_.begin(), obj_.end(), nullptr);
@@ -1422,9 +1420,30 @@ void DxScriptObjectManager::DeleteObjectByScriptID(int64_t idScript) {
 
 	for (size_t iObj = 0; iObj < obj_.size(); ++iObj) {
 		if (obj_[iObj] == nullptr) continue;
-		if (obj_[iObj]->GetScriptID() != idScript) continue;
+		if (obj_[iObj]->GetScriptID() != idScript || !obj_[iObj]->IsAutoDeleteEnable()) continue;
 		DeleteObject(obj_[iObj]);
 	}
+}
+void DxScriptObjectManager::OrphanObjectByScriptID(int64_t idScript) {
+	if (idScript == ScriptClientBase::ID_SCRIPT_FREE) return;
+
+	for (size_t iObj = 0; iObj < obj_.size(); ++iObj) {
+		if (obj_[iObj] == nullptr) continue;
+		if (obj_[iObj]->GetScriptID() != idScript) continue;
+		obj_[iObj]->idScript_ = ScriptClientBase::ID_SCRIPT_FREE;
+	}
+}
+std::vector<int> DxScriptObjectManager::GetObjectByScriptID(int64_t idScript) {
+	std::vector<int> res;
+
+	if (idScript != ScriptClientBase::ID_SCRIPT_FREE) {
+		for (size_t iObj = 0; iObj < obj_.size(); ++iObj) {
+			if (obj_[iObj] == nullptr) continue;
+			if (obj_[iObj]->GetScriptID() != idScript) continue;
+			res.push_back(obj_[iObj]->idObject_);
+		}
+	}
+	return res;
 }
 
 shared_ptr<Shader> DxScriptObjectManager::GetShader(int index) {
@@ -1441,6 +1460,7 @@ void DxScriptObjectManager::WorkObject() {
 			continue;
 		}
 		obj->Work();
+		++obj->frameExist_;
 		++itr;
 	}
 
@@ -1486,8 +1506,8 @@ void DxScriptObjectManager::RenderObject() {
 }
 void DxScriptObjectManager::CleanupObject() {
 	for (auto& obj : listActiveObject_) {
-		if (obj)
-			obj->CleanUp();
+		if (obj) obj->CleanUp();
+		if (obj && obj->IsQueuedForDeletion()) DeleteObject(obj); // Double check just in case
 	}
 }
 

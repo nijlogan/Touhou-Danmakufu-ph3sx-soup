@@ -7,6 +7,9 @@
 //StgEnemyManager
 //*******************************************************************
 StgEnemyManager::StgEnemyManager(StgStageController* stageController) {
+	bLoadThreadCancel_ = false;
+	countLoad_ = 0;
+
 	stageController_ = stageController;
 
 	FileManager::GetBase()->AddLoadThreadListener(this);
@@ -17,6 +20,7 @@ StgEnemyManager::~StgEnemyManager() {
 			obj->ClearEnemyObject();
 	}
 
+	this->WaitForCancel();
 	FileManager::GetBase()->RemoveLoadThreadListener(this);
 }
 void StgEnemyManager::Work() {
@@ -51,16 +55,20 @@ ref_unsync_ptr<StgEnemyBossSceneObject> StgEnemyManager::GetBossSceneObject() {
 
 class _ListBossSceneData : public FileManager::LoadObject {
 public:
+	std::vector<weak_ptr<StgEnemyBossSceneData>> listData;
+	size_t cData;
+public:
 	_ListBossSceneData(std::vector<shared_ptr<StgEnemyBossSceneData>>* listStepData) {
-		ptr = listStepData;
+		cData = listStepData->size();
+		listData.resize(cData);
+		for (size_t i = 0; i < cData; ++i)
+			listData[i] = listStepData->at(i);
 	}
-
-	std::vector<shared_ptr<StgEnemyBossSceneData>>* ptr;
 };
 void StgEnemyManager::LoadBossSceneScriptsInThread(std::vector<shared_ptr<StgEnemyBossSceneData>>* listStepData) {
 	Lock lock(lock_);
 	{
-		shared_ptr<_ListBossSceneData> pListData;
+		shared_ptr<FileManager::LoadObject> pListData;
 		pListData.reset(new _ListBossSceneData(listStepData));
 
 		shared_ptr<FileManager::LoadThreadEvent> event(new FileManager::LoadThreadEvent(this, L"", pListData));
@@ -71,43 +79,52 @@ void StgEnemyManager::CallFromLoadThread(shared_ptr<FileManager::LoadThreadEvent
 	shared_ptr<_ListBossSceneData> pListData = std::dynamic_pointer_cast<_ListBossSceneData>(event->GetSource());
 	if (pListData == nullptr) return;
 
-	{
-		Lock lock(lock_);
+	++countLoad_;
 
-		auto scriptManager = stageController_->GetScriptManager();
+	{
+		weak_ptr<StgStageScriptManager> scriptManagerWeak = stageController_->GetScriptManagerRef();
 		StgStageScriptObjectManager* objectManager = stageController_->GetMainObjectManager();
 
-		for (auto itrData = pListData->ptr->begin(); itrData != pListData->ptr->end(); ++itrData) {
-			shared_ptr<StgEnemyBossSceneData> pData = *itrData;
-			if (pData->bLoad_) return;
+		for (size_t i = 0; i < pListData->cData; ++i) {
+			shared_ptr<StgEnemyBossSceneData> pData = pListData->listData[i].lock();
+			if (pData == nullptr || pData->bLoad_) continue;
 
-			try {
-				auto script = scriptManager->LoadScript(pData->GetPath(), StgStageScript::TYPE_STAGE);
-				if (script == nullptr)
-					throw gstd::wexception(StringUtility::Format(L"Cannot load script: %s", pData->GetPath().c_str()));
-				pData->SetScriptPointer(script);
+			if (!bLoadThreadCancel_) {
+				auto pManager = scriptManagerWeak.lock();
+				if (pManager && pData->objBossSceneParent_.IsExists()) {
+					try {
+						auto script = pManager->LoadScript(pData->GetPath(), StgStageScript::TYPE_STAGE);
+						if (script == nullptr)
+							throw gstd::wexception(StringUtility::Format(L"Cannot load script: %s", pData->GetPath().c_str()));
 
-				/*
-				{
-					StaticLock lock2 = StaticLock();
-					pData->LoadSceneEvents(stageController_);
+						pData->SetScriptPointer(script);
+						pData->bLoad_ = true;
+					}
+					catch (gstd::wexception& e) {
+						Logger::WriteTop(e.what());
+						pManager->SetError(e.what());
+
+						pData->SetScriptPointer(weak_ptr<ManagedScript>());
+						pData->bLoad_ = true;
+
+						goto lab_cancel_all;
+					}
+					continue;
 				}
-				*/
-
-				pData->bLoad_ = true;
 			}
-			catch (gstd::wexception& e) {
-				Logger::WriteTop(e.what());
-
-				pData->SetScriptPointer(weak_ptr<ManagedScript>());
-				pData->bLoad_ = true;
-
-				scriptManager->SetError(e.what());
-
-				break;
+			
+lab_cancel_all:
+			//Cancels loading of all remaining scripts
+			for (size_t j = 0; j < pListData->cData; ++j) {
+				if (auto pData_ = pListData->listData[i].lock()) {
+					pData_->bLoad_ = true;
+				}
 			}
+			break;
 		}
 	}
+
+	--countLoad_;
 }
 
 //*******************************************************************
@@ -120,13 +137,18 @@ StgEnemyObject::StgEnemyObject(StgStageController* stageController) : StgMoveObj
 	SetRenderPriorityI(40);
 
 	life_ = 0;
+	lifePrev_ = 0;
 	rateDamageShot_ = 100;
 	rateDamageSpell_ = 100;
+
+	maximumDamage_ = 256 * 256 * 256;
+	damageAccumFrame_ = 0;
+
 	intersectedPlayerShotCount_ = 0U;
 
 	bEnableGetIntersectionPositionFetch_ = true;
 }
-StgEnemyObject:: ~StgEnemyObject() {
+StgEnemyObject::~StgEnemyObject() {
 }
 void StgEnemyObject::Work() {
 	ClearIntersected();
@@ -134,6 +156,10 @@ void StgEnemyObject::Work() {
 
 	ptrIntersectionToShot_.clear();
 	ptrIntersectionToPlayer_.clear();
+
+	lifeDelta_ = lifePrev_ - life_;
+	lifePrev_ = life_;
+	damageAccumFrame_ = 0;
 
 	_Move();
 }
@@ -163,13 +189,22 @@ void StgEnemyObject::Intersect(StgIntersectionTarget* ownTarget, StgIntersection
 				damage = spell->GetDamage() * rateDamageSpell_ / 100;
 		}
 	}
-	life_ = std::max(life_ - damage, 0.0);
+	AddLife2(-damage);
 }
 void StgEnemyObject::RegistIntersectionTarget() {
 	_AddRelativeIntersection();
 }
 ref_unsync_ptr<StgEnemyObject> StgEnemyObject::GetOwnObject() {
 	return ref_unsync_ptr<StgEnemyObject>::Cast(stageController_->GetMainRenderObject(idObject_));
+}
+void StgEnemyObject::AddLife(double inc) { 
+	life_ = std::max(life_ + inc, 0.0); 
+}
+void StgEnemyObject::AddLife2(double inc) {
+	if (damageAccumFrame_ - inc > maximumDamage_)
+		inc = -(maximumDamage_ - damageAccumFrame_);
+	damageAccumFrame_ -= inc;
+	AddLife(inc);
 }
 void StgEnemyObject::AddReferenceToShotIntersection(ref_unsync_ptr<StgIntersectionTarget> target) {
 	ptrIntersectionToShot_.push_back(target);

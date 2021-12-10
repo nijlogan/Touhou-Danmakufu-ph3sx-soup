@@ -12,6 +12,7 @@ using namespace directx;
 ShaderData::ShaderData() {
 	manager_ = nullptr;
 	effect_ = nullptr;
+	pIncludeCallback_ = nullptr;
 	bLoad_ = false;
 	bText_ = false;
 }
@@ -173,14 +174,14 @@ bool Shader::CreateFromFile(const std::wstring& path) {
 	}
 	return res;
 }
-bool Shader::CreateFromText(const std::string& source) {
+bool Shader::CreateFromText(const std::wstring& name, const std::string& source) {
 	bool res = false;
 	{
 		Lock lock(ShaderManager::GetBase()->GetLock());
 		if (data_) Release();
 
 		ShaderManager* manager = ShaderManager::GetBase();
-		shared_ptr<Shader> shader = manager->CreateFromText(source);
+		shared_ptr<Shader> shader = manager->CreateFromText(name, source);
 		if (shader)
 			data_ = shader->data_;
 		res = data_ != nullptr;
@@ -369,9 +370,11 @@ bool ShaderManager::_CreateFromFile(const std::wstring& path, shared_ptr<ShaderD
 
 		std::string source = reader->ReadAllString();
 
+		dest->pIncludeCallback_.reset(new ShaderIncludeCallback(PathProperty::GetFileDirectory(path)));
+
 		ID3DXBuffer* pErr = nullptr;
 		HRESULT hr = D3DXCreateEffect(graphics->GetDevice(), source.c_str(), source.size(),
-			nullptr, nullptr, 0, nullptr, &dest->effect_, &pErr);
+			nullptr, dest->pIncludeCallback_.get(), 0, nullptr, &dest->effect_, &pErr);
 
 		if (FAILED(hr)) {
 			std::wstring compileError = L"unknown error";
@@ -381,6 +384,7 @@ bool ShaderManager::_CreateFromFile(const std::wstring& path, shared_ptr<ShaderD
 			}
 
 			ptr_release(dest->effect_);
+			dest->pIncludeCallback_ = nullptr;
 
 			std::wstring err = StringUtility::Format(L"%s\r\n\t%s",
 				DXGetErrorStringW(hr), compileError.c_str());
@@ -410,12 +414,11 @@ bool ShaderManager::_CreateFromFile(const std::wstring& path, shared_ptr<ShaderD
 
 	return true;
 }
-bool ShaderManager::_CreateFromText(const std::string& source, shared_ptr<ShaderData>& dest) {
+bool ShaderManager::_CreateFromText(const std::wstring& name, const std::string& source, shared_ptr<ShaderData>& dest) {
 	DirectGraphics* graphics = DirectGraphics::GetBase();
 	lastError_ = L"";
 
-	std::wstring id = _GetTextSourceID(source);
-	auto itr = mapShaderData_.find(id);
+	auto itr = mapShaderData_.find(name);
 	if (itr != mapShaderData_.end()) {
 		dest = itr->second;
 		return true;
@@ -440,19 +443,19 @@ bool ShaderManager::_CreateFromText(const std::string& source, shared_ptr<Shader
 		}
 		else {
 			dest->manager_ = this;
-			dest->name_ = id;
+			dest->name_ = name;
 			dest->bLoad_ = true;
 			dest->bText_ = true;
 
-			mapShaderData_[id] = dest;
+			mapShaderData_[name] = dest;
 
-			std::wstring log = StringUtility::Format(L"ShaderManager: Shader loaded. [%s]", id.c_str());
+			std::wstring log = StringUtility::Format(L"ShaderManager: Shader loaded. [%s]", name.c_str());
 			Logger::WriteTop(log);
 		}
 	}
 	catch (gstd::wexception& e) {
 		std::wstring err = StringUtility::Format(L"ShaderManager: Shader compile failed. [%s]\r\n\t%s",
-			id.c_str(), e.what());
+			name.c_str(), e.what());
 		Logger::WriteTop(err);
 		lastError_ = err;
 
@@ -499,11 +502,6 @@ bool ShaderManager::_CreateUnmanagedFromEffect(ID3DXEffect* effect, shared_ptr<S
 	}
 
 	return true;
-}
-std::wstring ShaderManager::_GetTextSourceID(const std::string& source) {
-	std::wstring res = StringUtility::ConvertMultiToWide(source);
-	res = StringUtility::Slice(res, 128);
-	return res;
 }
 
 void ShaderManager::ReleaseDxResource() {
@@ -572,13 +570,13 @@ shared_ptr<Shader> ShaderManager::CreateFromFile(const std::wstring& path) {
 	}
 	return res;
 }
-shared_ptr<Shader> ShaderManager::CreateFromText(const std::string& source) {
+shared_ptr<Shader> ShaderManager::CreateFromText(const std::wstring& name, const std::string& source) {
 	shared_ptr<Shader> res = nullptr;
 	{
 		Lock lock(lock_);
 
 		shared_ptr<ShaderData> data(new ShaderData());
-		if (_CreateFromText(source, data)) {
+		if (_CreateFromText(name, source, data)) {
 			res = std::make_shared<Shader>();
 			res->data_ = data;
 		}
@@ -614,6 +612,61 @@ shared_ptr<Shader> ShaderManager::CreateFromFileInLoadThread(const std::wstring&
 	return false;
 }
 void ShaderManager::CallFromLoadThread(shared_ptr<gstd::FileManager::LoadThreadEvent> event) {
+}
+
+//*******************************************************************
+//ShaderIncludeCallback
+//*******************************************************************
+ShaderIncludeCallback::ShaderIncludeCallback(const std::wstring& localDir) {
+	includeLocalDir_ = PathProperty::ReplaceYenToSlash(localDir);
+	if (includeLocalDir_.back() != '/')
+		includeLocalDir_ += '/';
+}
+ShaderIncludeCallback::~ShaderIncludeCallback() {
+}
+
+HRESULT __stdcall ShaderIncludeCallback::Open(D3DXINCLUDE_TYPE type, LPCSTR pFileName, LPCVOID pParentData,
+	LPCVOID* ppData, UINT* pBytes)
+{
+	std::wstring sPath = StringUtility::ConvertMultiToWide(pFileName);
+	sPath = PathProperty::ReplaceYenToSlash(sPath);
+
+	if (!sPath._Starts_with(L"./"))
+		sPath = L"./" + sPath;
+
+	if (type == D3DXINC_LOCAL) {
+		sPath = includeLocalDir_ + sPath.substr(2);
+	}
+	else {
+		sPath = PathProperty::GetModuleDirectory() + sPath.substr(2);
+	}
+	sPath = PathProperty::GetUnique(sPath);
+
+	shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(sPath);
+	if (reader == nullptr || !reader->Open()) {
+		std::wstring error = StringUtility::Format(
+			L"Shader Compiler: Include file is not found. [%s]\r\n", sPath.c_str());
+		Logger::WriteTop(error);
+		return E_FAIL;
+	}
+
+	buffer_.resize(reader->GetFileSize());
+	if (buffer_.size() > 0) {
+		reader->Read(buffer_.data(), reader->GetFileSize());
+
+		*ppData = buffer_.data();
+		*pBytes = buffer_.size();
+	}
+	else {
+		*ppData = nullptr;
+		*pBytes = 0;
+	}
+
+	return S_OK;
+}
+HRESULT __stdcall ShaderIncludeCallback::Close(LPCVOID pData) {
+	buffer_.clear();
+	return S_OK;
 }
 
 //****************************************************************************

@@ -138,10 +138,18 @@ void StgPlayerObject::Work() {
 }
 void StgPlayerObject::Move() {
 	if (state_ == STATE_NORMAL && bEnableMovement_) {
+		++frameMove_;
 		_Move();
 	}
 	else {
 		SetSpeed(0);
+	}
+
+	//Just in case the player is the parent of anything
+	if (listOwnedParent_.size() > 0) {
+		for (auto& iPar : listOwnedParent_) {
+			if (iPar) iPar->UpdateChildren();
+		}
 	}
 }
 void StgPlayerObject::_Move() {

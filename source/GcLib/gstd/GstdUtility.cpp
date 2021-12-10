@@ -117,6 +117,17 @@ size_t Encoding::GetBomSize(Type encoding) {
 	}
 	return 0U;
 }
+const byte* Encoding::GetBom(Type encoding) {
+	switch (encoding) {
+	case Type::UTF16LE:
+		return BOM_UTF16LE;
+	case Type::UTF16BE:
+		return BOM_UTF16BE;
+	case Type::UTF8BOM:
+		return BOM_UTF8;
+	}
+	return nullptr;
+}
 size_t Encoding::GetCharSize(Type encoding) {
 	switch (encoding) {
 	case Type::UTF16LE:
@@ -124,6 +135,28 @@ size_t Encoding::GetCharSize(Type encoding) {
 		return 2U;
 	}
 	return 1U;
+}
+const char* Encoding::StringRepresentation(Type encoding) {
+	switch (encoding) {
+	case Type::UTF16LE:
+		return "UTF-16 LE";
+	case Type::UTF16BE:
+		return "UTF-16 BE";
+	case Type::UTF8BOM:
+		return "UTF-8-BOM";
+	}
+	return "UTF-8";
+}
+const wchar_t* Encoding::WStringRepresentation(Type encoding) {
+	switch (encoding) {
+	case Type::UTF16LE:
+		return L"UTF-16 LE";
+	case Type::UTF16BE:
+		return L"UTF-16 BE";
+	case Type::UTF8BOM:
+		return L"UTF-8-BOM";
+	}
+	return L"UTF-8";
 }
 size_t Encoding::GetMultibyteSize(const char* data) {
 	const char* begin = data;
@@ -324,12 +357,8 @@ std::wstring StringUtility::ParseStringWithEscape(const std::wstring& wstr) {
 
 //----------------------------------------------------------------
 
-std::vector<std::string> StringUtility::Split(const std::string& str, const std::string& delim) {
-	std::vector<std::string> res;
-	Split(str, delim, res);
-	return res;
-}
-void StringUtility::Split(const std::string& str, const std::string& delim, std::vector<std::string>& res) {
+template<class T_STR>
+void StringUtility::Split(const T_STR& str, const T_STR& delim, std::vector<T_STR>& res) {
 	size_t itrBegin = 0;
 	size_t itrFind = 0;
 	while ((itrFind = str.find_first_of(delim, itrBegin)) != std::string::npos) {
@@ -338,7 +367,27 @@ void StringUtility::Split(const std::string& str, const std::string& delim, std:
 	}
 	res.push_back(str.substr(itrBegin));
 }
+template<class T_STR>
+void StringUtility::SplitPattern(const T_STR& str, const T_STR& pattern, std::vector<T_STR>& res) {
+	size_t itrBegin = 0;
+	size_t itrFind = 0;
+	while ((itrFind = str.find(pattern, itrBegin)) != std::string::npos) {
+		res.push_back(str.substr(itrBegin, itrFind - itrBegin));
+		itrBegin = itrFind + pattern.size();
+	}
+	res.push_back(str.substr(itrBegin));
+}
 
+std::vector<std::string> StringUtility::Split(const std::string& str, const std::string& delim) {
+	std::vector<std::string> res;
+	Split<std::string>(str, delim, res);
+	return res;
+}
+std::vector<std::string> StringUtility::SplitPattern(const std::string& str, const std::string& pattern) {
+	std::vector<std::string> res;
+	SplitPattern<std::string>(str, pattern, res);
+	return res;
+}
 std::string StringUtility::Format(const char* str, ...) {
 	va_list	vl;
 	va_start(vl, str);
@@ -461,17 +510,13 @@ std::string StringUtility::Trim(const std::string& str) {
 
 std::vector<std::wstring> StringUtility::Split(const std::wstring& str, const std::wstring& delim) {
 	std::vector<std::wstring> res;
-	Split(str, delim, res);
+	Split<std::wstring>(str, delim, res);
 	return res;
 }
-void StringUtility::Split(const std::wstring& str, const std::wstring& delim, std::vector<std::wstring>& res) {
-	size_t itrBegin = 0;
-	size_t itrFind = 0;
-	while ((itrFind = str.find_first_of(delim, itrBegin)) != std::wstring::npos) {
-		res.push_back(str.substr(itrBegin, itrFind - itrBegin));
-		itrBegin = itrFind + 1;
-	}
-	res.push_back(str.substr(itrBegin));
+std::vector<std::wstring> StringUtility::SplitPattern(const std::wstring& str, const std::wstring& pattern) {
+	std::vector<std::wstring> res;
+	SplitPattern<std::wstring>(str, pattern, res);
+	return res;
 }
 std::wstring StringUtility::Format(const wchar_t* str, ...) {
 	va_list	vl;

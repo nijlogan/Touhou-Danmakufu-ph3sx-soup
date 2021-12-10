@@ -60,7 +60,7 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 	static constexpr const MAT2 mat = { { 0, 1 }, { 0, 0 }, { 0, 0 }, { 0, 1 } };
 	DWORD size = ::GetGlyphOutline(hDC, code, uFormat, &glpMet_, 0, nullptr, &mat);
 
-	UINT iBmp_w = Math::CeilBase(glpMet_.gmBlackBoxX, 4);
+	UINT iBmp_w = Math::CeilBase<UINT>(glpMet_.gmBlackBoxX, 4);
 	UINT iBmp_h = glpMet_.gmBlackBoxY;
 
 	size_.x = glpMet_.gmCellIncX + widthBorder * 2;
@@ -180,7 +180,7 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 								}
 							}
 
-							short destAlpha = 0;
+							size_t destAlpha = 0;
 							if (minAlphaEnableDist < widthBorder)
 								destAlpha = 255;
 							else if (minAlphaEnableDist == widthBorder)
@@ -188,7 +188,7 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 							else destAlpha = 0;
 
 							//color = ColorAccess::SetColorA(color, ColorAccess::GetColorA(colorBorder)*count/255);
-							byte c_a = ColorAccess::ClampColorRet(colorBorder[0] * destAlpha / 255);
+							byte c_a = (byte)ColorAccess::ClampColorRet(colorBorder[0] * destAlpha / 255);
 							color = D3DCOLOR_ARGB(c_a, colorBorder[1], colorBorder[2], colorBorder[3]);
 						}
 						else {				//Generate internal borders + smooth outlines
@@ -747,7 +747,7 @@ shared_ptr<DxTextLine> DxTextRenderer::_GetTextInfoSub(const std::wstring& text,
 	LONG widthBorder = dxFont.GetBorderType() != TextBorderType::None ? dxFont.GetBorderWidth() : 0L;
 	textLine->SetSidePitch(sidePitch);
 
-	if (widthMax < dxText->GetFontSize())
+	if (widthMax > 0 && widthMax < dxText->GetFontSize())
 		return nullptr;
 
 	const std::wstring strFirstForbid = L"」、。";
@@ -780,11 +780,11 @@ shared_ptr<DxTextLine> DxTextRenderer::_GetTextInfoSub(const std::wstring& text,
 		SIZE size = _GetTextSize(hDC, pText);
 		LONG lw = size.cx + widthBorder + sidePitch;
 		LONG lh = size.cy;
-		if (totalHeight + size.cy > heightMax) {
+		if (heightMax > 0 && totalHeight + size.cy > heightMax) {
 			textLine = nullptr;
 			break;
 		}
-		if (textLine->width_ + lw + sizeNext.cx >= widthMax) {
+		if (widthMax > 0 && textLine->width_ + lw + sizeNext.cx >= widthMax) {
 			//改行
 			totalWidth = std::max(totalWidth, textLine->width_);
 			totalHeight += textLine->height_ + linePitch;
@@ -1110,6 +1110,22 @@ shared_ptr<DxTextInfo> DxTextRenderer::GetTextInfo(DxText* dxText) {
 
 					auto __FuncSetColor_P = [](DxTextScanner& scan, std::vector<wchar_t>::iterator before, D3DCOLOR* dst) {
 						scan.SetCurrentPointer(before);
+						/*
+						if (scan.GetToken().GetType() == DxTextToken::Type::TK_OPENP) {
+							std::vector<std::wstring> list = GetScannerStringArgumentList(scan, before);
+							if (list.size() >= 3) {
+								byte r = ColorAccess::ClampColorRet(StringUtility::ToInteger(list[0]));
+								byte g = ColorAccess::ClampColorRet(StringUtility::ToInteger(list[1]));
+								byte b = ColorAccess::ClampColorRet(StringUtility::ToInteger(list[2]));
+								*dst = ((*dst) & 0xff000000) | (D3DCOLOR_XRGB(r, g, b) & 0x00ffffff);
+							}
+						}
+						else {
+							std::wstring colorStr = scan.GetToken().GetElement();
+							uint32_t color = std::wcstoul(colorStr.c_str(), nullptr, 16);
+							*dst = ((*dst) & 0xff000000) | (color & 0x00ffffff);
+						}
+						*/
 						std::vector<std::wstring> list = GetScannerStringArgumentList(scan, before);
 						if (list.size() >= 3) {
 							byte r = ColorAccess::ClampColorRet(StringUtility::ToInteger(list[0]));
@@ -1249,8 +1265,8 @@ std::wstring DxTextRenderer::_ReplaceRenderText(std::wstring text) {
 	return text;
 }
 
-void DxTextRenderer::_CreateRenderObject(shared_ptr<DxTextRenderObject> objRender, const POINT& pos, DxFont dxFont,
-	shared_ptr<DxTextLine> textLine)
+void DxTextRenderer::_CreateRenderObject(shared_ptr<DxTextRenderObject> objRender, DxText* pDxText, 
+	const POINT & pos, DxFont dxFont, shared_ptr<DxTextLine> textLine)
 {
 	SetFont(dxFont.GetLogFont());
 
@@ -1328,8 +1344,12 @@ void DxTextRenderer::_CreateRenderObject(shared_ptr<DxTextRenderObject> objRende
 		spriteText->SetVertex(rcSrc, rcDest, colorVertex_);
 		objRender->AddRenderObject(shared_ptr<Sprite2D>(spriteText));
 
-		//次の文字
-		xRender += dxChar->GetSize().x - dxFont.GetBorderWidth() + textLine->GetSidePitch();
+		LONG chrWidth = 0;
+		if (pDxText->GetFixedWidth() > 0)
+			chrWidth = pDxText->GetFixedWidth();
+		else
+			chrWidth = dxChar->GetSize().x - dxFont.GetBorderWidth();
+		xRender += chrWidth + textLine->GetSidePitch();
 	}
 }
 
@@ -1405,9 +1425,9 @@ shared_ptr<DxTextRenderObject> DxTextRenderer::CreateRenderObject(DxText* dxText
 				}
 
 				heightTotal += textLine->height_ + linePitch;
-				if (heightTotal > heightMax) break;
+				if (heightMax > 0 && heightTotal > heightMax) break;
 
-				_CreateRenderObject(objRender, pos, dxFont, textLine);
+				_CreateRenderObject(objRender, dxText, pos, dxFont, textLine);
 
 				pos.y += textLine->height_ + linePitch;
 			}
@@ -1474,10 +1494,11 @@ DxText::DxText() {
 
 	pos_.x = 0;
 	pos_.y = 0;
-	widthMax_ = INT_MAX;
-	heightMax_ = INT_MAX;
+	widthMax_ = 0;
+	heightMax_ = 0;
 	sidePitch_ = 0;
 	linePitch_ = 4;
+	fixedWidth_ = 0;
 	alignmentHorizontal_ = TextAlignment::Left;
 	alignmentVertical_ = TextAlignment::Top;
 
@@ -1495,6 +1516,7 @@ void DxText::Copy(const DxText& src) {
 	heightMax_ = src.heightMax_;
 	sidePitch_ = src.sidePitch_;
 	linePitch_ = src.linePitch_;
+	fixedWidth_ = src.fixedWidth_;
 	margin_ = src.margin_;
 	alignmentHorizontal_ = src.alignmentHorizontal_;
 	alignmentVertical_ = src.alignmentVertical_;
