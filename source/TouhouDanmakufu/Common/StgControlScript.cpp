@@ -4,8 +4,6 @@
 #include "StgSystem.hpp"
 #include "../DnhExecutor/GcLibImpl.hpp"
 
-#include "../DnhExecutor/GcLibImpl.hpp"
-
 //*******************************************************************
 //StgControlScriptManager
 //*******************************************************************
