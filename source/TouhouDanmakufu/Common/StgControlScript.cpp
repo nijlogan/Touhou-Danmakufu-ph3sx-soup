@@ -4,6 +4,8 @@
 #include "StgSystem.hpp"
 #include "../DnhExecutor/GcLibImpl.hpp"
 
+#include "../DnhExecutor/GcLibImpl.hpp"
+
 //*******************************************************************
 //StgControlScriptManager
 //*******************************************************************
@@ -634,30 +636,18 @@ gstd::value StgControlScript::Func_GetConfigVirtualKeyMapping(script_machine* ma
 
 	return StgControlScript::CreateIntArrayValue(key_pad, 2U);
 }
+gstd::value StgControlScript::Func_GetConfigWindowTitle(script_machine* machine, int argc, const value* argv) {
+	EDirectGraphics* graphics = EDirectGraphics::GetInstance();
+	return StgControlScript::CreateStringValue(graphics->GetDefaultWindowTitle());
+}
 gstd::value StgControlScript::Func_SetWindowTitle(script_machine* machine, int argc, const value* argv) {
-	EDirectGraphics* window = EDirectGraphics::GetInstance();
-	std::wstring title = argv->as_string();
-	HWND hWndDisplay = window->GetParentHWND();
+	EDirectGraphics* graphics = EDirectGraphics::GetInstance();
 
-	::SetWindowText(hWndDisplay, title.c_str());
+	std::wstring title = argv[0].as_string();
+	graphics->SetWindowTitle(title);
+
 	return value();
 }
-gstd::value StgControlScript::Func_ResetWindowTitle(script_machine* machine, int argc, const value* argv) {
-	EDirectGraphics* window = EDirectGraphics::GetInstance();
-	DnhConfiguration* config = DnhConfiguration::GetInstance();
-	std::wstring& title = config->windowTitle_;
-	HWND hWndDisplay = window->GetParentHWND();
-
-	::SetWindowText(hWndDisplay, title.c_str());
-	return value();
-}
-gstd::value StgControlScript::Func_GetDefaultWindowTitle(script_machine* machine, int argc, const value* argv) {
-	DnhConfiguration* config = DnhConfiguration::GetInstance();
-	std::wstring& title = config->windowTitle_;
-
-	return StgControlScript::CreateStringValue(title);
-}
-
 
 //STG共通関数：描画関連
 gstd::value StgControlScript::Func_ClearInvalidRenderPriority(gstd::script_machine* machine, int argc, const gstd::value* argv) {
