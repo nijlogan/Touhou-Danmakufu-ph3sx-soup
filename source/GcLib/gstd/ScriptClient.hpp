@@ -154,6 +154,7 @@ namespace gstd {
 		static inline value CreateRealValue(double r);
 		static inline value CreateIntValue(int64_t r);
 		static inline value CreateBooleanValue(bool b);
+		static inline value CreateCharValue(wchar_t c);
 		static inline value CreateStringValue(const std::wstring& s);
 		static inline value CreateStringValue(const std::string& s);
 		template<typename T> static inline value CreateRealArrayValue(const std::vector<T>& list);
@@ -206,10 +207,20 @@ namespace gstd {
 		static value Func_Sin(script_machine* machine, int argc, const value* argv);
 		static value Func_Tan(script_machine* machine, int argc, const value* argv);
 		DNH_FUNCAPI_DECL_(Func_SinCos);
+		DNH_FUNCAPI_DECL_(Func_CosSin);
 		DNH_FUNCAPI_DECL_(Func_RCos);
 		DNH_FUNCAPI_DECL_(Func_RSin);
 		DNH_FUNCAPI_DECL_(Func_RTan);
 		DNH_FUNCAPI_DECL_(Func_RSinCos);
+		DNH_FUNCAPI_DECL_(Func_RCosSin);
+
+		DNH_FUNCAPI_DECL_(Func_Sec);
+		DNH_FUNCAPI_DECL_(Func_Csc);
+		DNH_FUNCAPI_DECL_(Func_Cot);
+		DNH_FUNCAPI_DECL_(Func_RSec);
+		DNH_FUNCAPI_DECL_(Func_RCsc);
+		DNH_FUNCAPI_DECL_(Func_RCot);
+
 
 		static value Func_Acos(script_machine* machine, int argc, const value* argv);
 		static value Func_Asin(script_machine* machine, int argc, const value* argv);
@@ -219,6 +230,32 @@ namespace gstd {
 		DNH_FUNCAPI_DECL_(Func_RAsin);
 		DNH_FUNCAPI_DECL_(Func_RAtan);
 		DNH_FUNCAPI_DECL_(Func_RAtan2);
+		DNH_FUNCAPI_DECL_(Func_Asec);
+		DNH_FUNCAPI_DECL_(Func_Acsc);
+		DNH_FUNCAPI_DECL_(Func_Acot);
+		DNH_FUNCAPI_DECL_(Func_RAsec);
+		DNH_FUNCAPI_DECL_(Func_RAcsc);
+		DNH_FUNCAPI_DECL_(Func_RAcot);
+
+		DNH_FUNCAPI_DECL_(Func_Cas);
+		DNH_FUNCAPI_DECL_(Func_RCas);
+
+		DNH_FUNCAPI_DECL_(Func_CosH);
+		DNH_FUNCAPI_DECL_(Func_SinH);
+		DNH_FUNCAPI_DECL_(Func_TanH);
+		DNH_FUNCAPI_DECL_(Func_AcosH);
+		DNH_FUNCAPI_DECL_(Func_AsinH);
+		DNH_FUNCAPI_DECL_(Func_AtanH);
+		DNH_FUNCAPI_DECL_(Func_SecH);
+		DNH_FUNCAPI_DECL_(Func_CscH);
+		DNH_FUNCAPI_DECL_(Func_CotH);
+		DNH_FUNCAPI_DECL_(Func_AsecH);
+		DNH_FUNCAPI_DECL_(Func_AcscH);
+		DNH_FUNCAPI_DECL_(Func_AcotH);
+
+		DNH_FUNCAPI_DECL_(Func_Triangular);
+		DNH_FUNCAPI_DECL_(Func_Tetrahedral);
+		DNH_FUNCAPI_DECL_(Func_NSimplex);
 
 		DNH_FUNCAPI_DECL_(Func_Exp);
 		DNH_FUNCAPI_DECL_(Func_Sqrt);
@@ -227,14 +264,26 @@ namespace gstd {
 		DNH_FUNCAPI_DECL_(Func_Hypot);
 		DNH_FUNCAPI_DECL_(Func_Distance);
 		DNH_FUNCAPI_DECL_(Func_DistanceSq);
+		template<bool USE_RAD>
 		DNH_FUNCAPI_DECL_(Func_GapAngle);
-		DNH_FUNCAPI_DECL_(Func_RGapAngle);
+		template<bool USE_RAD>
+		DNH_FUNCAPI_DECL_(Func_PolarToCartesian);
+		template<bool USE_RAD>
+		DNH_FUNCAPI_DECL_(Func_CartesianToPolar);
 
 		//Math functions; random
 		static value Func_Rand(script_machine* machine, int argc, const value* argv);
 		DNH_FUNCAPI_DECL_(Func_RandI);
 		DNH_FUNCAPI_DECL_(Func_RandEff);
 		DNH_FUNCAPI_DECL_(Func_RandEffI);
+		DNH_FUNCAPI_DECL_(Func_RandArray);
+		DNH_FUNCAPI_DECL_(Func_RandEffArray);
+		DNH_FUNCAPI_DECL_(Func_RandArrayI);
+		DNH_FUNCAPI_DECL_(Func_RandEffArrayI);
+		DNH_FUNCAPI_DECL_(Func_Choose);
+		DNH_FUNCAPI_DECL_(Func_ChooseEff);
+		DNH_FUNCAPI_DECL_(Func_Shuffle);
+		DNH_FUNCAPI_DECL_(Func_ShuffleEff);
 		DNH_FUNCAPI_DECL_(Func_RandEffSet);
 		DNH_FUNCAPI_DECL_(Func_GetRandCount);
 		DNH_FUNCAPI_DECL_(Func_GetRandEffCount);
@@ -244,28 +293,30 @@ namespace gstd {
 		//Math functions; angle helper
 		DNH_FUNCAPI_DECL_(Func_ToDegrees);
 		DNH_FUNCAPI_DECL_(Func_ToRadians);
+		template<bool USE_RAD>
 		DNH_FUNCAPI_DECL_(Func_NormalizeAngle);
-		DNH_FUNCAPI_DECL_(Func_NormalizeAngleR);
+		template<bool USE_RAD>
 		DNH_FUNCAPI_DECL_(Func_AngularDistance);
-		DNH_FUNCAPI_DECL_(Func_AngularDistanceR);
+		template<bool USE_RAD>
 		DNH_FUNCAPI_DECL_(Func_ReflectAngle);
-		DNH_FUNCAPI_DECL_(Func_ReflectAngleR);
 
 		//Math functions; interpolation
-		DNH_FUNCAPI_DECL_(Func_Interpolate_Linear);
-		DNH_FUNCAPI_DECL_(Func_Interpolate_Smooth);
-		DNH_FUNCAPI_DECL_(Func_Interpolate_Smoother);
-		DNH_FUNCAPI_DECL_(Func_Interpolate_Accelerate);
-		DNH_FUNCAPI_DECL_(Func_Interpolate_Decelerate);
+		template<double (*func)(double, double, double)>
+		DNH_FUNCAPI_DECL_(Func_Interpolate);
 		DNH_FUNCAPI_DECL_(Func_Interpolate_Modulate);
 		DNH_FUNCAPI_DECL_(Func_Interpolate_Overshoot);
 		DNH_FUNCAPI_DECL_(Func_Interpolate_QuadraticBezier);
 		DNH_FUNCAPI_DECL_(Func_Interpolate_CubicBezier);
 		DNH_FUNCAPI_DECL_(Func_Interpolate_Hermite);
-
 		DNH_FUNCAPI_DECL_(Func_Interpolate_X);
 		DNH_FUNCAPI_DECL_(Func_Interpolate_X_Packed);
+		template<bool USE_RAD>
+		DNH_FUNCAPI_DECL_(Func_Interpolate_X_Angle);
 		DNH_FUNCAPI_DECL_(Func_Interpolate_X_Array);
+
+		//Math functions; kinematics
+		template<double (*funcKinematic)(double, double, double)>
+		DNH_FUNCAPI_DECL_(Func_Kinematic);
 
 		//Math functions; rotation
 		DNH_FUNCAPI_DECL_(Func_Rotate2D);
@@ -280,6 +331,10 @@ namespace gstd {
 		DNH_FUNCAPI_DECL_(Func_StringFormat);
 		static value Func_AtoI(script_machine* machine, int argc, const value* argv);
 		static value Func_AtoR(script_machine* machine, int argc, const value* argv);
+		template<wint_t (*func)(wint_t)>
+		static value Func_RecaseString(script_machine* machine, int argc, const value* argv);
+		template<int (*func)(wint_t)>
+		static value Func_ClassifyString(script_machine* machine, int argc, const value* argv);
 		static value Func_TrimString(script_machine* machine, int argc, const value* argv);
 		static value Func_SplitString(script_machine* machine, int argc, const value* argv);
 		DNH_FUNCAPI_DECL_(Func_SplitString2);
@@ -288,6 +343,17 @@ namespace gstd {
 		DNH_FUNCAPI_DECL_(Func_RegexMatch);
 		DNH_FUNCAPI_DECL_(Func_RegexMatchRepeated);
 		DNH_FUNCAPI_DECL_(Func_RegexReplace);
+
+		//Digit functions
+		DNH_FUNCAPI_DECL_(Func_DigitToArray);
+		DNH_FUNCAPI_DECL_(Func_GetDigitCount);
+
+		//Point lists
+		DNH_FUNCAPI_DECL_(Func_GetPoints_Line);
+		DNH_FUNCAPI_DECL_(Func_GetPoints_Circle);
+		DNH_FUNCAPI_DECL_(Func_GetPoints_Ellipse);
+		DNH_FUNCAPI_DECL_(Func_GetPoints_EquidistantEllipse);
+		DNH_FUNCAPI_DECL_(Func_GetPoints_RegularPolygon);
 
 		//Path utility
 		static value Func_GetParentScriptDirectory(script_machine* machine, int argc, const value* argv);
@@ -308,6 +374,7 @@ namespace gstd {
 
 		//System time
 		DNH_FUNCAPI_DECL_(Func_GetSystemTimeMilliS);
+		DNH_FUNCAPI_DECL_(Func_GetSystemTimeMicroS);
 		DNH_FUNCAPI_DECL_(Func_GetSystemTimeNanoS);
 		static value Func_GetCurrentDateTimeS(script_machine* machine, int argc, const value* argv);
 
@@ -348,6 +415,9 @@ namespace gstd {
 	}
 	value ScriptClientBase::CreateBooleanValue(bool b) {
 		return value(script_type_manager::get_boolean_type(), b);
+	}
+	value ScriptClientBase::CreateCharValue(wchar_t c) {
+		return value(script_type_manager::get_char_type(), c);
 	}
 	value ScriptClientBase::CreateStringValue(const std::wstring& s) {
 		return value(script_type_manager::get_string_type(), s);

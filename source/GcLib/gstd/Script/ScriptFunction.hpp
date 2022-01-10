@@ -105,14 +105,23 @@ namespace gstd {
 		DNH_FUNCAPI_DECL_(not_);
 
 		DNH_FUNCAPI_DECL_(modc);
+		DNH_FUNCAPI_DECL_(apo);
 		DNH_FUNCAPI_DECL_(predecessor);
 		DNH_FUNCAPI_DECL_(successor);
 
 		static const value* index(script_machine* machine, int argc, value* arr, value* indexer);
 
 		DNH_FUNCAPI_DECL_(length);
+		DNH_FUNCAPI_DECL_(generate);
 		DNH_FUNCAPI_DECL_(resize);
+		DNH_FUNCAPI_DECL_(reverse);
+		DNH_FUNCAPI_DECL_(sort);
+		DNH_FUNCAPI_DECL_(range);
 		DNH_FUNCAPI_DECL_(contains);
+		DNH_FUNCAPI_DECL_(indexof);
+		DNH_FUNCAPI_DECL_(matches);
+		DNH_FUNCAPI_DECL_(all);
+		DNH_FUNCAPI_DECL_(any);
 		DNH_FUNCAPI_DECL_(replace);
 		DNH_FUNCAPI_DECL_(remove);
 
@@ -124,9 +133,12 @@ namespace gstd {
 		DNH_FUNCAPI_DECL_(concatenate_direct);
 
 		DNH_FUNCAPI_DECL_(round);
+		DNH_FUNCAPI_DECL_(round_base);
 		DNH_FUNCAPI_DECL_(truncate);
 		DNH_FUNCAPI_DECL_(ceil);
+		DNH_FUNCAPI_DECL_(ceil_base);
 		DNH_FUNCAPI_DECL_(floor);
+		DNH_FUNCAPI_DECL_(floor_base);
 
 		static value _script_absolute(int argc, const value* argv);
 		DNH_FUNCAPI_DECL_(absolute);

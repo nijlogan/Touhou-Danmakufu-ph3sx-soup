@@ -25,7 +25,7 @@ public:
 		TYPE_ALL,
 	};
 	enum {
-		COUNT_MENU_TEXT = 10,
+		COUNT_MENU_TEXT = 12,
 	};
 	class Sort;
 
@@ -170,6 +170,7 @@ public:
 class PlayTypeSelectMenuItem : public TextLightUpMenuItem {
 	shared_ptr<DxTextRenderObject> objText_;
 	POINT pos_;
+    POINT posRoot_;
 
 	PlayTypeSelectScene* _GetTitleScene() { return (PlayTypeSelectScene*)menu_; }
 public:

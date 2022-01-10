@@ -78,10 +78,19 @@ static const std::vector<function> commonFunction = {
 	{ "sin", ScriptClientBase::Func_Sin, 1 },
 	{ "tan", ScriptClientBase::Func_Tan, 1 },
 	{ "sincos", ScriptClientBase::Func_SinCos, 1 },
+	{ "cossin", ScriptClientBase::Func_CosSin, 1 },
 	{ "rcos", ScriptClientBase::Func_RCos, 1 },
 	{ "rsin", ScriptClientBase::Func_RSin, 1 },
 	{ "rtan", ScriptClientBase::Func_RTan, 1 },
 	{ "rsincos", ScriptClientBase::Func_RSinCos, 1 },
+	{ "rcossin", ScriptClientBase::Func_RCosSin, 1 },
+
+	{ "sec", ScriptClientBase::Func_Sec, 1 },
+	{ "csc", ScriptClientBase::Func_Csc, 1 },
+	{ "cot", ScriptClientBase::Func_Cot, 1 },
+	{ "rsec", ScriptClientBase::Func_RSec, 1 },
+	{ "rcsc", ScriptClientBase::Func_RCsc, 1 },
+	{ "rcot", ScriptClientBase::Func_RCot, 1 },
 
 	{ "acos", ScriptClientBase::Func_Acos, 1 },
 	{ "asin", ScriptClientBase::Func_Asin, 1 },
@@ -91,16 +100,43 @@ static const std::vector<function> commonFunction = {
 	{ "rasin", ScriptClientBase::Func_RAsin, 1 },
 	{ "ratan", ScriptClientBase::Func_RAtan, 1 },
 	{ "ratan2", ScriptClientBase::Func_RAtan2, 2 },
+	{ "asec", ScriptClientBase::Func_Asec, 1 },
+	{ "acsc", ScriptClientBase::Func_Acsc, 1 },
+	{ "acot", ScriptClientBase::Func_Acot, 1 },
+	{ "rasec", ScriptClientBase::Func_RAsec, 1 },
+	{ "racsc", ScriptClientBase::Func_RAcsc, 1 },
+	{ "racot", ScriptClientBase::Func_RAcot, 1 },
+
+	{ "cas", ScriptClientBase::Func_Cas, 1 },
+	{ "rcas", ScriptClientBase::Func_RCas, 1 },
+
+	{ "cosh", ScriptClientBase::Func_CosH, 1 },
+	{ "sinh", ScriptClientBase::Func_SinH, 1 },
+	{ "tanh", ScriptClientBase::Func_TanH, 1 },
+	{ "acosh", ScriptClientBase::Func_AcosH, 1 },
+	{ "asinh", ScriptClientBase::Func_AsinH, 1 },
+	{ "atanh", ScriptClientBase::Func_AtanH, 1 },
+	{ "sech", ScriptClientBase::Func_SecH, 1 },
+	{ "csch", ScriptClientBase::Func_CscH, 1 },
+	{ "coth", ScriptClientBase::Func_CotH, 1 },
+	{ "asech", ScriptClientBase::Func_AsecH, 1 },
+	{ "acsch", ScriptClientBase::Func_AcscH, 1 },
+	{ "acoth", ScriptClientBase::Func_AcotH, 1 },
+
+	//Math functions: figurate numbers
+	{ "triangular", ScriptClientBase::Func_Triangular, 1 },
+	{ "tetrahedral", ScriptClientBase::Func_Tetrahedral, 1 },
+	{ "nsimplex", ScriptClientBase::Func_NSimplex, 2 },
 
 	//Math functions: Angles
 	{ "ToDegrees", ScriptClientBase::Func_ToDegrees, 1 },
 	{ "ToRadians", ScriptClientBase::Func_ToRadians, 1 },
-	{ "NormalizeAngle", ScriptClientBase::Func_NormalizeAngle, 1 },
-	{ "NormalizeAngleR", ScriptClientBase::Func_NormalizeAngleR, 1 },
-	{ "AngularDistance", ScriptClientBase::Func_AngularDistance, 2 },
-	{ "AngularDistanceR", ScriptClientBase::Func_AngularDistanceR, 2 },
-	{ "ReflectAngle", ScriptClientBase::Func_ReflectAngle, 2 },
-	{ "ReflectAngleR", ScriptClientBase::Func_ReflectAngleR, 2 },
+	{ "NormalizeAngle", ScriptClientBase::Func_NormalizeAngle<false>, 1 },
+	{ "NormalizeAngleR", ScriptClientBase::Func_NormalizeAngle<true>, 1 },
+	{ "AngularDistance", ScriptClientBase::Func_AngularDistance<false>, 2 },
+	{ "AngularDistanceR", ScriptClientBase::Func_AngularDistance<true>, 2 },
+	{ "ReflectAngle", ScriptClientBase::Func_ReflectAngle<false>, 2 },
+	{ "ReflectAngleR", ScriptClientBase::Func_ReflectAngle<true>, 2 },
 
 	//Math functions: Extra
 	{ "exp", ScriptClientBase::Func_Exp, 1 },
@@ -110,14 +146,26 @@ static const std::vector<function> commonFunction = {
 	{ "hypot", ScriptClientBase::Func_Hypot, 2 },
 	{ "distance", ScriptClientBase::Func_Distance, 4 },
 	{ "distancesq", ScriptClientBase::Func_DistanceSq, 4 },
-	{ "dottheta", ScriptClientBase::Func_GapAngle, 4 },
-	{ "rdottheta", ScriptClientBase::Func_RGapAngle, 4 },
+	{ "dottheta", ScriptClientBase::Func_GapAngle<false>, 4 },
+	{ "rdottheta", ScriptClientBase::Func_GapAngle<true>, 4 },
+	{ "PolarToCartesian", ScriptClientBase::Func_PolarToCartesian<false>, 2 },
+	{ "PolarToCartesianR", ScriptClientBase::Func_PolarToCartesian<true>, 2 },
+	{ "CartesianToPolar", ScriptClientBase::Func_CartesianToPolar<false>, 2 },
+	{ "CartesianToPolarR", ScriptClientBase::Func_CartesianToPolar<true>, 2 },
 
 	//Random
 	{ "rand", ScriptClientBase::Func_Rand, 2 },
 	{ "rand_int", ScriptClientBase::Func_RandI, 2 },
 	{ "prand", ScriptClientBase::Func_RandEff, 2 },
 	{ "prand_int", ScriptClientBase::Func_RandEffI, 2 },
+	{ "rand_array", ScriptClientBase::Func_RandArray, 3 },
+	{ "rand_int_array", ScriptClientBase::Func_RandArrayI, 3 },
+	{ "prand_array", ScriptClientBase::Func_RandEffArray, 3 },
+	{ "prand_int_array", ScriptClientBase::Func_RandEffArrayI, 3 },
+	{ "choose", ScriptClientBase::Func_Choose, 1 },
+	{ "pchoose", ScriptClientBase::Func_ChooseEff, 1 },
+	{ "shuffle", ScriptClientBase::Func_Shuffle, 1 },
+	{ "pshuffle", ScriptClientBase::Func_ShuffleEff, 1 },
 	{ "psrand", ScriptClientBase::Func_RandEffSet, 1 },
 	{ "count_rand", ScriptClientBase::Func_GetRandCount, 0 },
 	{ "count_prand", ScriptClientBase::Func_GetRandEffCount, 0 },
@@ -125,11 +173,11 @@ static const std::vector<function> commonFunction = {
 	{ "reset_count_prand", ScriptClientBase::Func_ResetRandEffCount, 0 },
 
 	//Interpolation
-	{ "Interpolate_Linear", ScriptClientBase::Func_Interpolate_Linear, 3 },
-	{ "Interpolate_Smooth", ScriptClientBase::Func_Interpolate_Smooth, 3 },
-	{ "Interpolate_Smoother", ScriptClientBase::Func_Interpolate_Smoother, 3 },
-	{ "Interpolate_Accelerate", ScriptClientBase::Func_Interpolate_Accelerate, 3 },
-	{ "Interpolate_Decelerate", ScriptClientBase::Func_Interpolate_Decelerate, 3 },
+	{ "Interpolate_Linear", ScriptClientBase::Func_Interpolate<Math::Lerp::Linear>, 3 },
+	{ "Interpolate_Smooth", ScriptClientBase::Func_Interpolate<Math::Lerp::Smooth>, 3 },
+	{ "Interpolate_Smoother", ScriptClientBase::Func_Interpolate<Math::Lerp::Smoother>, 3 },
+	{ "Interpolate_Accelerate", ScriptClientBase::Func_Interpolate<Math::Lerp::Accelerate>, 3 },
+	{ "Interpolate_Decelerate", ScriptClientBase::Func_Interpolate<Math::Lerp::Decelerate>, 3 },
 	{ "Interpolate_Modulate", ScriptClientBase::Func_Interpolate_Modulate, 4 },
 	{ "Interpolate_Overshoot", ScriptClientBase::Func_Interpolate_Overshoot, 4 },
 	{ "Interpolate_QuadraticBezier", ScriptClientBase::Func_Interpolate_QuadraticBezier, 4 },
@@ -137,7 +185,31 @@ static const std::vector<function> commonFunction = {
 	{ "Interpolate_Hermite", ScriptClientBase::Func_Interpolate_Hermite, 9 },
 	{ "Interpolate_X", ScriptClientBase::Func_Interpolate_X, 4 },
 	{ "Interpolate_X_PackedInt", ScriptClientBase::Func_Interpolate_X_Packed, 4 },
+	{ "Interpolate_X_Angle", ScriptClientBase::Func_Interpolate_X_Angle<false>, 4 },
+	{ "Interpolate_X_AngleR", ScriptClientBase::Func_Interpolate_X_Angle<true>, 4 },
     { "Interpolate_X_Array", ScriptClientBase::Func_Interpolate_X_Array, 3 },
+
+	//Kinematics
+	{ "Kinematic_U_VAD", ScriptClientBase::Func_Kinematic<Math::Kinematic::U_VAD>, 3 },
+	{ "Kinematic_U_VAT", ScriptClientBase::Func_Kinematic<Math::Kinematic::U_VAT>, 3 },
+	{ "Kinematic_U_VDT", ScriptClientBase::Func_Kinematic<Math::Kinematic::U_VDT>, 3 },
+	{ "Kinematic_U_ADT", ScriptClientBase::Func_Kinematic<Math::Kinematic::U_ADT>, 3 },
+	{ "Kinematic_V_UAD", ScriptClientBase::Func_Kinematic<Math::Kinematic::V_UAD>, 3 },
+	{ "Kinematic_V_UAT", ScriptClientBase::Func_Kinematic<Math::Kinematic::V_UAT>, 3 },
+	{ "Kinematic_V_UDT", ScriptClientBase::Func_Kinematic<Math::Kinematic::V_UDT>, 3 },
+	{ "Kinematic_V_ADT", ScriptClientBase::Func_Kinematic<Math::Kinematic::V_ADT>, 3 },
+	{ "Kinematic_A_UVD", ScriptClientBase::Func_Kinematic<Math::Kinematic::A_UVD>, 3 },
+	{ "Kinematic_A_UVT", ScriptClientBase::Func_Kinematic<Math::Kinematic::A_UVT>, 3 },
+	{ "Kinematic_A_UDT", ScriptClientBase::Func_Kinematic<Math::Kinematic::A_UDT>, 3 },
+	{ "Kinematic_A_VDT", ScriptClientBase::Func_Kinematic<Math::Kinematic::A_VDT>, 3 },
+	{ "Kinematic_D_UVA", ScriptClientBase::Func_Kinematic<Math::Kinematic::D_UVA>, 3 },
+	{ "Kinematic_D_UVT", ScriptClientBase::Func_Kinematic<Math::Kinematic::D_UVT>, 3 },
+	{ "Kinematic_D_UAT", ScriptClientBase::Func_Kinematic<Math::Kinematic::D_UAT>, 3 },
+	{ "Kinematic_D_VAT", ScriptClientBase::Func_Kinematic<Math::Kinematic::D_VAT>, 3 },
+	{ "Kinematic_T_UVA", ScriptClientBase::Func_Kinematic<Math::Kinematic::T_UVA>, 3 },
+	{ "Kinematic_T_UVD", ScriptClientBase::Func_Kinematic<Math::Kinematic::T_UVD>, 3 },
+	{ "Kinematic_T_UAD", ScriptClientBase::Func_Kinematic<Math::Kinematic::T_UAD>, 3 },
+	{ "Kinematic_T_VAD", ScriptClientBase::Func_Kinematic<Math::Kinematic::T_VAD>, 3 },
 
 	//Rotation
 	{ "Rotate2D", ScriptClientBase::Func_Rotate2D, 3 },
@@ -155,6 +227,13 @@ static const std::vector<function> commonFunction = {
 	{ "StringFormat", ScriptClientBase::Func_StringFormat, -4 },	//2 fixed + ... -> 3 minimum
 	{ "atoi", ScriptClientBase::Func_AtoI, 1 },
 	{ "ator", ScriptClientBase::Func_AtoR, 1 },
+	{ "ToUpper", ScriptClientBase::Func_RecaseString<towupper>, 1 },
+	{ "ToLower", ScriptClientBase::Func_RecaseString<towlower>, 1 },
+	{ "IsUpper", ScriptClientBase::Func_ClassifyString<iswupper>, 1 },
+	{ "IsLower", ScriptClientBase::Func_ClassifyString<iswlower>, 1 },
+	{ "IsAlpha", ScriptClientBase::Func_ClassifyString<iswalpha>, 1 },
+	{ "IsAlnum", ScriptClientBase::Func_ClassifyString<iswalnum>, 1 },
+	{ "IsAscii", ScriptClientBase::Func_ClassifyString<iswascii>, 1 },
 	{ "TrimString", ScriptClientBase::Func_TrimString, 1 },
 	{ "SplitString", ScriptClientBase::Func_SplitString, 2 },
 	{ "SplitString2", ScriptClientBase::Func_SplitString2, 2 },
@@ -162,6 +241,19 @@ static const std::vector<function> commonFunction = {
 	{ "RegexMatch", ScriptClientBase::Func_RegexMatch, 2 },
 	{ "RegexMatchRepeated", ScriptClientBase::Func_RegexMatchRepeated, 2 },
 	{ "RegexReplace", ScriptClientBase::Func_RegexReplace, 3 },
+
+	//Digit functions
+	{ "DigitToArray", ScriptClientBase::Func_DigitToArray, 1 },
+	{ "DigitToArray", ScriptClientBase::Func_DigitToArray, 2 }, //Overloaded
+	{ "CountDigits", ScriptClientBase::Func_GetDigitCount, 1 },
+
+	//Point lists
+	{ "GetPoints_Line", ScriptClientBase::Func_GetPoints_Line, 5 },
+	{ "GetPoints_Circle", ScriptClientBase::Func_GetPoints_Circle, 5 },
+	{ "GetPoints_Ellipse", ScriptClientBase::Func_GetPoints_Ellipse, 7 },
+	{ "GetPoints_EquidistantEllipse", ScriptClientBase::Func_GetPoints_EquidistantEllipse, 7 },
+	{ "GetPoints_RegularPolygon", ScriptClientBase::Func_GetPoints_RegularPolygon, 7 },
+
 
 	//Path utilities
 	{ "GetParentScriptDirectory", ScriptClientBase::Func_GetParentScriptDirectory, 0 },
@@ -182,6 +274,7 @@ static const std::vector<function> commonFunction = {
 
 	//System time
 	{ "GetSystemTimeMilliS", ScriptClientBase::Func_GetSystemTimeMilliS, 0 },
+	{ "GetSystemTimeMicroS", ScriptClientBase::Func_GetSystemTimeMicroS, 0 },
 	{ "GetSystemTimeNanoS", ScriptClientBase::Func_GetSystemTimeNanoS, 0 },
 	{ "GetCurrentDateTimeS", ScriptClientBase::Func_GetCurrentDateTimeS, 0 },
 
@@ -297,6 +390,7 @@ ScriptClientBase::ScriptClientBase() {
 	_AddConstant(&commonConstant);
 	{
 		definedMacro_[L"_DNH_PH3SX_"] = L"";
+		definedMacro_[L"_DNH_PH3SX_ZLABEL_"] = L"";
 	}
 
 	Reset();
@@ -705,7 +799,14 @@ value ScriptClientBase::Func_SinCos(script_machine* machine, int argc, const val
 
 	return script->CreateRealArrayValue(scArray, 2U);
 }
+value ScriptClientBase::Func_CosSin(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
 
+	double scArray[2];
+	Math::DoSinCos(-Math::DegreeToRadian(argv->as_real()) + GM_PI_2, scArray);
+
+	return script->CreateRealArrayValue(scArray, 2U);
+}
 value ScriptClientBase::Func_RCos(script_machine* machine, int argc, const value* argv) {
 	return CreateRealValue(cos(argv->as_real()));
 }
@@ -722,6 +823,33 @@ value ScriptClientBase::Func_RSinCos(script_machine* machine, int argc, const va
 	Math::DoSinCos(argv->as_real(), scArray);
 
 	return script->CreateRealArrayValue(scArray, 2U);
+}
+value ScriptClientBase::Func_RCosSin(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+
+	double scArray[2];
+	Math::DoSinCos(-(argv->as_real()) + GM_PI_2, scArray);
+
+	return script->CreateRealArrayValue(scArray, 2U);
+}
+
+value ScriptClientBase::Func_Sec(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(1 / cos(Math::DegreeToRadian(argv->as_real())));
+}
+value ScriptClientBase::Func_Csc(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(1 / sin(Math::DegreeToRadian(argv->as_real())));
+}
+value ScriptClientBase::Func_Cot(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(1 / tan(Math::DegreeToRadian(argv->as_real())));
+}
+value ScriptClientBase::Func_RSec(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(1 / cos(argv->as_real()));
+}
+value ScriptClientBase::Func_RCsc(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(1 / sin(argv->as_real()));
+}
+value ScriptClientBase::Func_RCot(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(1 / tan(argv->as_real()));
 }
 
 value ScriptClientBase::Func_Acos(script_machine* machine, int argc, const value* argv) {
@@ -747,6 +875,96 @@ value ScriptClientBase::Func_RAtan(script_machine* machine, int argc, const valu
 }
 value ScriptClientBase::Func_RAtan2(script_machine* machine, int argc, const value* argv) {
 	return CreateRealValue(atan2(argv[0].as_real(), argv[1].as_real()));
+}
+
+value ScriptClientBase::Func_Asec(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(Math::RadianToDegree(acos(1 / argv->as_real())));
+}
+value ScriptClientBase::Func_Acsc(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(Math::RadianToDegree(asin(1 / argv->as_real())));
+}
+value ScriptClientBase::Func_Acot(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(Math::RadianToDegree(atan(1 / argv->as_real())));
+}
+value ScriptClientBase::Func_RAsec(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(acos(1 / argv->as_real()));
+}
+value ScriptClientBase::Func_RAcsc(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(asin(1 / argv->as_real()));
+}
+value ScriptClientBase::Func_RAcot(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(atan(1 / argv->as_real()));
+}
+
+value ScriptClientBase::Func_Cas(script_machine* machine, int argc, const value* argv) {
+	double scArray[2];
+	Math::DoSinCos(Math::DegreeToRadian(argv->as_real()), scArray);
+	return CreateRealValue(scArray[0] + scArray[1]);
+}
+value ScriptClientBase::Func_RCas(script_machine* machine, int argc, const value* argv) {
+	double scArray[2];
+	Math::DoSinCos(argv->as_real(), scArray);
+	return CreateRealValue(scArray[0] + scArray[1]);
+}
+
+value ScriptClientBase::Func_CosH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(cosh(argv->as_real()));
+}
+value ScriptClientBase::Func_SinH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(sinh(argv->as_real()));
+}
+value ScriptClientBase::Func_TanH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(tanh(argv->as_real()));
+}
+value ScriptClientBase::Func_AcosH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(acosh(argv->as_real()));
+}
+value ScriptClientBase::Func_AsinH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(asinh(argv->as_real()));
+}
+value ScriptClientBase::Func_AtanH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(atanh(argv->as_real()));
+}
+value ScriptClientBase::Func_SecH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(1 / cosh(argv->as_real()));
+}
+value ScriptClientBase::Func_CscH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(1 / sinh(argv->as_real()));
+}
+value ScriptClientBase::Func_CotH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(1 / tanh(argv->as_real()));
+}
+value ScriptClientBase::Func_AsecH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(acosh(1 / argv->as_real()));
+}
+value ScriptClientBase::Func_AcscH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(asinh(1 / argv->as_real()));
+}
+value ScriptClientBase::Func_AcotH(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(atanh(1 / argv->as_real()));
+}
+
+value ScriptClientBase::Func_Triangular(script_machine* machine, int argc, const value* argv) {
+	double num = argv->as_real();
+	double val = num * (num + 1.0) / 2.0;
+	return CreateRealValue(val);
+}
+value ScriptClientBase::Func_Tetrahedral(script_machine* machine, int argc, const value* argv) {
+	double num = argv->as_real();
+	double val = num * (num + 1.0) * (num + 2.0) / 6.0;
+	return CreateRealValue(val);
+}
+value ScriptClientBase::Func_NSimplex(script_machine* machine, int argc, const value* argv) {
+	double num = argv[0].as_real();
+	size_t dim = std::max(argv[1].as_int(), 0i64);
+	double div = tgamma(dim + 1);
+	double val = 1.0;
+
+	for (size_t i = 0; i < dim; ++i) val *= num + i;
+
+	val /= div;
+
+	return CreateRealValue(val);
 }
 
 value ScriptClientBase::Func_Exp(script_machine* machine, int argc, const value* argv) {
@@ -777,17 +995,31 @@ value ScriptClientBase::Func_DistanceSq(script_machine* machine, int argc, const
 	double dy = argv[3].as_real() - argv[1].as_real();
 	return CreateRealValue(Math::HypotSq<double>(dx, dy));
 }
+template<bool USE_RAD>
 value ScriptClientBase::Func_GapAngle(script_machine* machine, int argc, const value* argv) {
 	double dx = argv[2].as_real() - argv[0].as_real();
 	double dy = argv[3].as_real() - argv[1].as_real();
 	double res = atan2(dy, dx);
-	return CreateRealValue(Math::RadianToDegree(res));
+	return CreateRealValue(USE_RAD ? res : Math::RadianToDegree(res));
 }
-value ScriptClientBase::Func_RGapAngle(script_machine* machine, int argc, const value* argv) {
-	double dx = argv[2].as_real() - argv[0].as_real();
-	double dy = argv[3].as_real() - argv[1].as_real();
-	double res = atan2(dy, dx);
-	return CreateRealValue(res);
+
+template<bool USE_RAD>
+value ScriptClientBase::Func_PolarToCartesian(script_machine* machine, int argc, const value* argv) {
+	double scArray[2];
+	double rad = argv[0].as_real();
+	double dir = argv[1].as_real();
+	Math::DoSinCos(USE_RAD ? dir : Math::DegreeToRadian(dir), scArray);
+	double res[]{ rad * scArray[1], rad * scArray[0] };
+	return CreateRealArrayValue(res, 2U);
+}
+template<bool USE_RAD>
+value ScriptClientBase::Func_CartesianToPolar(script_machine* machine, int argc, const value* argv) {
+	double x = argv[0].as_real();
+	double y = argv[1].as_real();
+	double r = hypot(x, y);
+	double d = atan2(y, x);
+	double res[]{ r, USE_RAD ? d : Math::RadianToDegree(d) };
+	return CreateRealArrayValue(res, 2U);
 }
 
 value ScriptClientBase::Func_Rand(script_machine* machine, int argc, const value* argv) {
@@ -820,6 +1052,205 @@ value ScriptClientBase::Func_RandEffI(script_machine* machine, int argc, const v
 	double min = argv[0].as_int();
 	double max = argv[1].as_int() + 0.9999999;
 	return script->CreateIntValue(script->mtEffect_->GetReal(min, max));
+}
+
+value ScriptClientBase::Func_RandArray(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	script->CheckRunInMainThread();
+
+	size_t size = argv[0].as_int();
+	double min = argv[1].as_real();
+	double max = argv[2].as_real();
+	value res;
+	std::vector<value> resArr;
+
+	type_data* type = script_type_manager::get_real_type();
+
+	for (int i = 0; i < size; ++i) {
+		++randCalls_;
+		resArr.push_back(value(type, script->mt_->GetReal(min, max)));
+	}
+
+	res.reset(script_type_manager::get_real_array_type(), resArr);
+	return res;
+}
+value ScriptClientBase::Func_RandEffArray(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	script->CheckRunInMainThread();
+
+	size_t size = argv[0].as_int();
+	double min = argv[1].as_real();
+	double max = argv[2].as_real();
+	value res;
+	std::vector<value> resArr;
+
+	type_data* type = script_type_manager::get_real_type();
+
+	for (int i = 0; i < size; ++i) {
+		++prandCalls_;
+		resArr.push_back(value(type, script->mtEffect_->GetReal(min, max)));
+	}
+
+	res.reset(script_type_manager::get_real_array_type(), resArr);
+	return res;
+}
+
+value ScriptClientBase::Func_RandArrayI(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	script->CheckRunInMainThread();
+
+	size_t size = argv[0].as_int();
+	double min = argv[1].as_int();
+	double max = argv[2].as_int() + 0.9999999;
+	value res;
+	std::vector<value> resArr;
+
+	type_data* type = script_type_manager::get_int_type();
+
+	for (int i = 0; i < size; ++i) {
+		++randCalls_;
+		resArr.push_back(value(type, (int64_t)script->mt_->GetReal(min, max))); // Why is this necessary :dying:
+	}
+
+	res.reset(script_type_manager::get_int_array_type(), resArr);
+	return res;
+}
+value ScriptClientBase::Func_RandEffArrayI(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	script->CheckRunInMainThread();
+
+	size_t size = argv[0].as_int();
+	double min = argv[1].as_int();
+	double max = argv[2].as_int() + 0.9999999;
+	value res;
+	std::vector<value> resArr;
+
+	type_data* type = script_type_manager::get_int_type();
+
+	for (int i = 0; i < size; ++i) {
+		++prandCalls_;
+		resArr.push_back(value(type, (int64_t)script->mtEffect_->GetReal(min, max)));
+	}
+
+	res.reset(script_type_manager::get_int_array_type(), resArr);
+	return res;
+}
+
+value ScriptClientBase::Func_Choose(script_machine* machine, int argc, const value* argv) {
+	BaseFunction::_null_check(machine, argv, argc);
+
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	script->CheckRunInMainThread();
+
+	const value* val = &argv[0];
+	type_data* valType = val->get_type();
+
+	if (valType->get_kind() != type_data::tk_array) {
+		BaseFunction::_raise_error_unsupported(machine, argv->get_type(), "choose");
+		return value();
+	}
+
+	size_t size = val->length_as_array() - 1;
+	int64_t index = script->mt_->GetReal(0, size + 0.9999999);
+	++randCalls_;
+
+	return val->index_as_array(index);
+}
+value ScriptClientBase::Func_ChooseEff(script_machine* machine, int argc, const value* argv) {
+	BaseFunction::_null_check(machine, argv, argc);
+
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+
+	const value* val = &argv[0];
+	type_data* valType = val->get_type();
+
+	if (valType->get_kind() != type_data::tk_array) {
+		BaseFunction::_raise_error_unsupported(machine, argv->get_type(), "pchoose");
+		return value();
+	}
+
+	size_t size = val->length_as_array() - 1;
+	int64_t index = script->mtEffect_->GetReal(0, size + 0.9999999);
+	++prandCalls_;
+
+	return val->index_as_array(index);
+}
+value ScriptClientBase::Func_Shuffle(script_machine* machine, int argc, const value* argv) {
+	BaseFunction::_null_check(machine, argv, argc);
+
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	script->CheckRunInMainThread();
+
+	const value* val = &argv[0];
+	type_data* valType = val->get_type();
+
+	if (valType->get_kind() != type_data::tk_array) {
+		BaseFunction::_raise_error_unsupported(machine, argv->get_type(), "shuffle");
+		return value();
+	}
+
+	size_t size = val->length_as_array();
+
+	value res = *val;
+	res.make_unique();
+
+	std::vector<value> arrVal;
+	std::vector<value> arrOld(size);
+
+	for (size_t i = 0; i < size; ++i)
+		arrOld[i] = val->index_as_array(i);
+
+	for (size_t i = 0; i < size; ++i) {
+		int64_t index = 0;
+		if (i < size - 1) {
+			index = script->mt_->GetReal(0, size - 0.0000001 - i);
+			++randCalls_;
+		}
+		arrVal.push_back(arrOld[index]);
+		arrOld.erase(arrOld.begin() + index);
+	}
+
+	
+
+	res.reset(valType, arrVal);
+	return res;
+}
+value ScriptClientBase::Func_ShuffleEff(script_machine* machine, int argc, const value* argv) {
+	BaseFunction::_null_check(machine, argv, argc);
+
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+
+	const value* val = &argv[0];
+	type_data* valType = val->get_type();
+
+	if (valType->get_kind() != type_data::tk_array) {
+		BaseFunction::_raise_error_unsupported(machine, argv->get_type(), "pshuffle");
+		return value();
+	}
+
+	size_t size = val->length_as_array();
+
+	value res = *val;
+	res.make_unique();
+
+	std::vector<value> arrVal;
+	std::vector<value> arrOld(size);
+
+	for (size_t i = 0; i < size; ++i)
+		arrOld[i] = val->index_as_array(i);
+
+	for (size_t i = 0; i < size; ++i) {
+		int64_t index = 0;
+		if (i < size - 1) {
+			index = script->mtEffect_->GetReal(0, size - 0.0000001 - i);
+			++prandCalls_;
+		}
+		arrVal.push_back(arrOld[index]);
+		arrOld.erase(arrOld.begin() + index);
+	}
+
+	res.reset(valType, arrVal);
+	return res;
 }
 value ScriptClientBase::Func_RandEffSet(script_machine* machine, int argc, const value* argv) {
 	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
@@ -873,25 +1304,10 @@ static value _ScriptValueLerp(script_machine* machine, const value* v1, const va
 		return ScriptClientBase::CreateRealValue(lerpFunc(v1->as_real(), v2->as_real(), vx));
 	}
 }
-value ScriptClientBase::Func_Interpolate_Linear(script_machine* machine, int argc, const value* argv) {
+template<double (*func)(double, double, double)>
+value ScriptClientBase::Func_Interpolate(script_machine* machine, int argc, const value* argv) {
 	double x = argv[2].as_real();
-	return _ScriptValueLerp(machine, &argv[0], &argv[1], x, Math::Lerp::Linear);
-}
-value ScriptClientBase::Func_Interpolate_Smooth(script_machine* machine, int argc, const value* argv) {
-	double x = argv[2].as_real();
-	return _ScriptValueLerp(machine, &argv[0], &argv[1], x, Math::Lerp::Smooth);
-}
-value ScriptClientBase::Func_Interpolate_Smoother(script_machine* machine, int argc, const value* argv) {
-	double x = argv[2].as_real();
-	return _ScriptValueLerp(machine, &argv[0], &argv[1], x, Math::Lerp::Smoother);
-}
-value ScriptClientBase::Func_Interpolate_Accelerate(script_machine* machine, int argc, const value* argv) {
-	double x = argv[2].as_real();
-	return _ScriptValueLerp(machine, &argv[0], &argv[1], x, Math::Lerp::Accelerate);
-}
-value ScriptClientBase::Func_Interpolate_Decelerate(script_machine* machine, int argc, const value* argv) {
-	double x = argv[2].as_real();
-	return _ScriptValueLerp(machine, &argv[0], &argv[1], x, Math::Lerp::Decelerate);
+	return _ScriptValueLerp(machine, &argv[0], &argv[1], x, func);
 }
 value ScriptClientBase::Func_Interpolate_Modulate(script_machine* machine, int argc, const value* argv) {
 	double a = argv[0].as_real();
@@ -1013,6 +1429,21 @@ value ScriptClientBase::Func_Interpolate_X_Packed(script_machine* machine, int a
 	}
 	return CreateIntValue(res);
 }
+template<bool USE_RAD>
+value ScriptClientBase::Func_Interpolate_X_Angle(script_machine* machine, int argc, const value* argv) {
+	double a = argv[0].as_real();
+	double b = argv[1].as_real();
+	double x = argv[2].as_real();
+
+	Math::Lerp::Type type = (Math::Lerp::Type)argv[3].as_int();
+	auto funcLerp = Math::Lerp::GetFunc<double, double>(type);
+	auto funcDiff = USE_RAD ? Math::AngleDifferenceRad : Math::AngleDifferenceDeg;
+	auto funcNorm = USE_RAD ? Math::NormalizeAngleRad : Math::NormalizeAngleDeg;
+
+	b = a + funcDiff(a, b);
+
+	return CreateRealValue(funcNorm(funcLerp(a, b, x)));
+}
 // :souperdying:
 value ScriptClientBase::Func_Interpolate_X_Array(script_machine* machine, int argc, const value* argv) {
 	BaseFunction::_null_check(machine, argv, argc);
@@ -1039,6 +1470,11 @@ value ScriptClientBase::Func_Interpolate_X_Array(script_machine* machine, int ar
 	auto lerpFunc =  Math::Lerp::GetFunc<double, double>(type);
 
 	return _ScriptValueLerp(machine, &arr[from], &arr[to], x, lerpFunc);
+}
+
+template<double (*funcKinematic)(double, double, double)>
+value ScriptClientBase::Func_Kinematic(script_machine* machine, int argc, const value* argv) {
+	return CreateRealValue(funcKinematic(argv[0].as_real(), argv[1].as_real(), argv[2].as_real()));
 }
 
 value ScriptClientBase::Func_Rotate2D(script_machine* machine, int argc, const value* argv) {
@@ -1280,6 +1716,37 @@ value ScriptClientBase::Func_AtoR(script_machine* machine, int argc, const value
 	double num = StringUtility::ToDouble(str);
 	return CreateRealValue(num);
 }
+template<wint_t (*func)(wint_t)>
+value ScriptClientBase::Func_RecaseString(script_machine* machine, int argc, const value* argv) {
+	if (argv->get_type()->get_kind() == type_data::type_kind::tk_array) {
+		std::wstring str = argv->as_string();
+		for (auto& ch : str) ch = func(ch);
+		return CreateStringValue(str);
+	}
+	else {
+		wchar_t ch = argv->as_char();
+		return CreateCharValue(func(ch));
+	}
+}
+template<int (*func)(wint_t)>
+value ScriptClientBase::Func_ClassifyString(script_machine* machine, int argc, const value* argv) {
+	bool res = true;
+	if (argv->get_type()->get_kind() == type_data::type_kind::tk_array) {
+		std::wstring str = argv->as_string();
+		for (auto& ch : str) {
+			if (!func(ch)) {
+				res = false;
+				break;
+			}
+		}
+	}
+	else {
+		wchar_t ch = argv->as_char();
+		res = func(ch);
+	}
+	return CreateBooleanValue(res);
+}
+
 value ScriptClientBase::Func_TrimString(script_machine* machine, int argc, const value* argv) {
 	std::wstring res = StringUtility::Trim(argv->as_string());
 	return CreateStringValue(res);
@@ -1342,6 +1809,226 @@ value ScriptClientBase::Func_RegexReplace(script_machine* machine, int argc, con
 	std::wstring replacing = argv[2].as_string();
 	return script->CreateStringValue(std::regex_replace(str, std::wregex(pattern), replacing));
 }
+value ScriptClientBase::Func_DigitToArray(script_machine* machine, int argc, const value* argv) {
+	// mkm why didn't you just hardcode this
+	int64_t input = abs(argv[0].as_int()); // Just forget about negatives tbh
+	std::vector<size_t> res;
+
+	int64_t length = 0;
+	if (argc == 2) {
+		length = argv[1].as_int();
+		if (length < 0) {
+			std::string error = "Length cannot be negative.";
+			machine->raise_error(error);
+			return value();
+		}
+	}
+
+	// length applies to leading digits, not trailing ones. What should I do about overflow though :thinkies:
+	for (size_t i = 0; (argc == 1 && input != 0) || (argc == 2 && i < length); ++i) {
+		res.insert(res.begin(), input % 10);
+		input /= 10;
+	}
+
+	return CreateIntArrayValue(res);
+}
+value ScriptClientBase::Func_GetDigitCount(script_machine* machine, int argc, const value* argv) {
+	int64_t input = argv[0].as_int();
+
+	input = std::max(std::abs(input), 1i64);
+
+	size_t res = (size_t)log10(input) + 1;
+
+	return CreateIntValue(res);
+}
+
+//Point lists
+// Args: x1, y1, x2, y2, midpoints
+value ScriptClientBase::Func_GetPoints_Line(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	double x1 = argv[0].as_real();
+	double y1 = argv[1].as_real();
+	double x2 = argv[2].as_real();
+	double y2 = argv[3].as_real();
+	size_t mid = std::max(argv[4].as_int(), 0i64);
+
+	double gap = 1.0 / (mid + 1.0);
+
+	value res;
+	std::vector<value> arr;
+
+	for (size_t i = 0; i < 2 + mid; ++i) {
+		double xy[2] = { Math::Lerp::Linear(x1, x2, i * gap), Math::Lerp::Linear(y1, y2, i * gap) };
+		value v = script->CreateRealArrayValue(xy, 2);
+		arr.push_back(v);
+	}
+
+	return script->CreateValueArrayValue(arr);
+}
+
+// Args: x, y, count, radius, angle
+value ScriptClientBase::Func_GetPoints_Circle(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	double x = argv[0].as_real();
+	double y = argv[1].as_real();
+	size_t cnt = std::max(argv[2].as_int(), 0i64);
+	double rad = argv[3].as_real();
+	double dir = Math::DegreeToRadian(argv[4].as_real());
+	
+
+	double gap = GM_PI_X2 / cnt;
+
+	double sc[2];
+
+	std::vector<value> arr;
+
+	for (size_t i = 0; i < cnt; ++i) {
+		Math::DoSinCos(dir + i * gap, sc);
+		double xy[2] = { x + sc[1] * rad, y + sc[0] * rad };
+		value v = script->CreateRealArrayValue(xy, 2);
+		arr.push_back(v);
+	}
+
+	return script->CreateValueArrayValue(arr);
+}
+
+// Args: x, y, count, x rad, y rad, offset angle, rotation angle
+value ScriptClientBase::Func_GetPoints_Ellipse(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	double x = argv[0].as_real();
+	double y = argv[1].as_real();
+	size_t cnt = std::max(argv[2].as_int(), 0i64);
+	double rx = argv[3].as_real();
+	double ry = argv[4].as_real();
+	double a1 = Math::DegreeToRadian(argv[5].as_real());
+	double a2 = Math::DegreeToRadian(argv[6].as_real());
+
+	double gap = GM_PI_X2 / cnt;
+
+	double sc1[2];
+	double sc2[2];
+
+	Math::DoSinCos(a2, sc2);
+
+	std::vector<value> arr;
+
+	for (size_t i = 0; i < cnt; ++i) {
+		Math::DoSinCos(a1 + i * gap, sc1);
+		double _xy[2] = { sc1[1] * rx, sc1[0] * ry };
+
+		double xy[2] = {
+			x + _xy[0] * sc2[1] - _xy[1] * sc2[0],
+			y + _xy[0] * sc2[0] + _xy[1] * sc2[1]
+		};
+
+		value v = script->CreateRealArrayValue(xy, 2);
+		arr.push_back(v);
+	}
+
+	return script->CreateValueArrayValue(arr);
+}
+
+// Args: x, y, count, x rad, y rad, offset angle, rotation angle
+value ScriptClientBase::Func_GetPoints_EquidistantEllipse(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	double x = argv[0].as_real();
+	double y = argv[1].as_real();
+	size_t cnt = std::max(argv[2].as_int(), 0i64);
+	double rx = argv[3].as_real();
+	double ry = argv[4].as_real();
+	double a1 = Math::DegreeToRadian(argv[5].as_real());
+	double a2 = Math::DegreeToRadian(argv[6].as_real());
+
+	std::vector<std::vector<double>> points;
+
+	double sc1[2];
+	double sc2[2];
+
+	double theta = a1;
+	double delta = 1 / 360.0;
+	int microIntegrals = floor(GM_PI_X2 / delta + 0.5);
+	double circ = 0;
+
+	for (int i = 0; i < microIntegrals; ++i) {
+		theta += delta;
+		Math::DoSinCos(theta, sc1);
+		circ += sqrt((rx * sc1[0]) * (rx * sc1[0]) + (ry * sc1[1]) * (ry * sc1[1]));
+	}
+
+	double next = 0;
+	double run = 0;
+
+	for (int i = 0; i < microIntegrals; ++i) {
+		theta += delta;
+		Math::DoSinCos(theta, sc1);
+		if (floor(cnt * run / circ) >= next) {
+			std::vector<double>vec{ rx * sc1[1], ry * sc1[0] };
+			points.push_back(vec);
+			next++;
+			// theta += skip;
+		}
+
+		run += sqrt((rx * sc1[0]) * (rx * sc1[0]) + (ry * sc1[1]) * (ry * sc1[1]));
+	}
+	
+
+	Math::DoSinCos(a2, sc2);
+
+	std::vector<value> arr;
+
+	for (size_t i = 0; i < cnt; ++i) {
+		std::vector<double>& point = points[i];
+
+		double xy[2] = {
+			x + point[0] * sc2[1] - point[1] * sc2[0],
+			y + point[0] * sc2[0] + point[1] * sc2[1]
+		};
+
+		value v = script->CreateRealArrayValue(xy, 2);
+		arr.push_back(v);
+	}
+
+	return script->CreateValueArrayValue(arr);
+}
+
+// Args: x, y, sides, side skip, midpoints, radius, angle
+value ScriptClientBase::Func_GetPoints_RegularPolygon(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	double x = argv[0].as_real();
+	double y = argv[1].as_real();
+	size_t side = std::max(argv[2].as_int(), 0i64);
+	size_t skip = std::max(argv[3].as_int(), 0i64);
+	size_t mid = std::max(argv[4].as_int(), 0i64);
+	double rad = argv[5].as_real();
+	double dir = Math::DegreeToRadian(argv[6].as_real());
+
+	double gapS = GM_PI_X2 / side * skip;
+	double gapM = 1.0 / (mid + 1);
+
+	double sc[2];
+
+	std::vector<value> arr;
+	std::vector<std::vector<double>> pts;
+
+	for (size_t i = 0; i < side; ++i) {
+		Math::DoSinCos(dir + i * gapS, sc);
+		std::vector vec{ x + sc[1] * rad, y + sc[0] * rad };
+		pts.push_back(vec);
+	}
+
+	for (size_t i = 0; i < side; ++i) {
+		std::vector<double>& pt1 = pts[i];
+		std::vector<double>& pt2 = pts[(i + skip) % side];
+		for (size_t j = 0; j < mid + 1; ++j) {
+			double xy[2] = { Math::Lerp::Linear(pt1[0], pt2[0], j * gapM), Math::Lerp::Linear(pt1[1], pt2[1], j * gapM) };
+			value v = script->CreateRealArrayValue(xy, 2);
+			arr.push_back(v);
+		}
+	}
+
+	return script->CreateValueArrayValue(arr);
+}
+
 
 value ScriptClientBase::Func_ToDegrees(script_machine* machine, int argc, const value* argv) {
 	return CreateRealValue(Math::RadianToDegree(argv->as_real()));
@@ -1349,39 +2036,25 @@ value ScriptClientBase::Func_ToDegrees(script_machine* machine, int argc, const 
 value ScriptClientBase::Func_ToRadians(script_machine* machine, int argc, const value* argv) {
 	return CreateRealValue(Math::DegreeToRadian(argv->as_real()));
 }
+template<bool USE_RAD>
 value ScriptClientBase::Func_NormalizeAngle(script_machine* machine, int argc, const value* argv) {
 	double ang = argv->as_real();
-	return CreateRealValue(Math::NormalizeAngleDeg(ang));
+	auto func = USE_RAD ? Math::NormalizeAngleRad : Math::NormalizeAngleDeg;
+	return CreateRealValue(func(ang));
 }
-value ScriptClientBase::Func_NormalizeAngleR(script_machine* machine, int argc, const value* argv) {
-	double ang = argv->as_real();
-	return CreateRealValue(Math::NormalizeAngleRad(ang));
-}
+template<bool USE_RAD>
 value ScriptClientBase::Func_AngularDistance(script_machine* machine, int argc, const value* argv) {
 	double angFrom = argv[0].as_real();
 	double angTo = argv[1].as_real();
-	double dist = Math::NormalizeAngleDeg(angTo - angFrom);
-	if (dist > 180.0) dist -= 360.0;
-	return CreateRealValue(dist);
+	auto func = USE_RAD ? Math::AngleDifferenceRad : Math::AngleDifferenceDeg;
+	return CreateRealValue(func(angFrom, angTo));
 }
-value ScriptClientBase::Func_AngularDistanceR(script_machine* machine, int argc, const value* argv) {
-	double angFrom = argv[0].as_real();
-	double angTo = argv[1].as_real();
-	double dist = Math::NormalizeAngleRad(angTo - angFrom);
-	if (dist > GM_PI) dist -= GM_PI_X2;
-	return CreateRealValue(dist);
-}
+template<bool USE_RAD>
 value ScriptClientBase::Func_ReflectAngle(script_machine* machine, int argc, const value* argv) {
 	double angRay = argv[0].as_real();
 	double angSurf = argv[1].as_real();
-	double angRef = Math::NormalizeAngleDeg(2 * angSurf - angRay);
-	return CreateRealValue(angRef);
-}
-value ScriptClientBase::Func_ReflectAngleR(script_machine* machine, int argc, const value* argv) {
-	double angRay = argv[0].as_real();
-	double angSurf = argv[1].as_real();
-	double angRef = Math::NormalizeAngleRad(2 * angSurf - angRay);
-	return CreateRealValue(angRef);
+	auto func = USE_RAD ? Math::NormalizeAngleRad : Math::NormalizeAngleDeg;
+	return CreateRealValue(func(2 * angSurf - angRay));
 }
 
 //共通関数：パス関連
@@ -1457,6 +2130,11 @@ value ScriptClientBase::Func_IsDirectoryExists(script_machine* machine, int argc
 value ScriptClientBase::Func_GetSystemTimeMilliS(script_machine* machine, int argc, const value* argv) {
 	auto duration = std::chrono::system_clock::now().time_since_epoch();
 	int64_t time = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+	return ScriptClientBase::CreateIntValue(time);
+}
+value ScriptClientBase::Func_GetSystemTimeMicroS(script_machine* machine, int argc, const value* argv) {
+	auto duration = std::chrono::system_clock::now().time_since_epoch();
+	int64_t time = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
 	return ScriptClientBase::CreateIntValue(time);
 }
 value ScriptClientBase::Func_GetSystemTimeNanoS(script_machine* machine, int argc, const value* argv) {

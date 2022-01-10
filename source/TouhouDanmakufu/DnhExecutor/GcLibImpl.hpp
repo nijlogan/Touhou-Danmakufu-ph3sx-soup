@@ -30,8 +30,6 @@ public:
 class EDirectGraphics : public Singleton<EDirectGraphics>, public DirectGraphicsPrimaryWindow {
 	friend Singleton<EDirectGraphics>;
 protected:
-	std::wstring defaultWindowTitle_;
-protected:
 	virtual LRESULT _WindowProcedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 public:
 	EDirectGraphics();
@@ -39,7 +37,4 @@ public:
 
 	virtual bool Initialize(const std::wstring& windowTitle);
 	void SetRenderStateFor2D(BlendMode type);
-
-	const std::wstring& GetDefaultWindowTitle() { return defaultWindowTitle_; }
-	void SetWindowTitle(const std::wstring& title);
 };

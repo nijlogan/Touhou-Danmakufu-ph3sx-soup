@@ -37,8 +37,8 @@ TitleScene::TitleScene() {
 	};
 	for (int iItem = 0; iItem < ITEM_COUNT; iItem++) {
 		int x = 48 + iItem * 6 + 12 * pow((double)-1, (int)(iItem - 1));
-		int y = 154 + iItem * 30;
-		AddMenuItem(new TitleSceneMenuItem(strText[iItem], strDescription[iItem], x, y));
+		int y = -320 + screenHeight + iItem * 40;
+		AddMenuItem(new TitleSceneMenuItem(strText[iItem], strDescription[iItem], x, y, iItem));
 	}
 
 	cursorY_ = SystemController::GetInstance()->GetSystemInformation()->GetLastTitleSelectedIndex();
@@ -94,18 +94,26 @@ void TitleScene::Render() {
 }
 
 //TitleSceneMenuItem
-TitleSceneMenuItem::TitleSceneMenuItem(std::wstring text, std::wstring description, int x, int y) {
+TitleSceneMenuItem::TitleSceneMenuItem(std::wstring text, std::wstring description, int x, int y, int id) {
+    posRoot_.x = x;
+    posRoot_.y = y;
 	pos_.x = x;
 	pos_.y = y;
-
+    D3DCOLOR rgb = 0xffffffff;
+	
 	DxText dxText;
-	dxText.SetFontColorTop(D3DCOLOR_ARGB(255, 255, 255, 255));
-	dxText.SetFontColorBottom(D3DCOLOR_ARGB(255, 64, 64, 64));
+
+    ColorAccess::HSVtoRGB(rgb, id * 45 + 30, 192, 192);
+	dxText.SetFontColorTop(rgb);
+
+    ColorAccess::HSVtoRGB(rgb, id * 45 + 15, 255, 64);
+	dxText.SetFontColorBottom(rgb);
 	dxText.SetFontBorderType(TextBorderType::Full);
-	dxText.SetFontBorderColor(D3DCOLOR_ARGB(255, 32, 32, 128));
+	dxText.SetFontBorderColor(D3DCOLOR_ARGB(255, 192, 192, 192));
 	dxText.SetFontBorderWidth(2);
-	dxText.SetFontSize(24);
-	dxText.SetFontWeight(FW_BOLD);
+	dxText.SetFontSize(30);
+	dxText.SetFontWeight(1000);
+    dxText.SetFontItalic(true);
 	dxText.SetText(text);
 	objText_ = dxText.CreateRenderObject();
 }
@@ -114,10 +122,24 @@ void TitleSceneMenuItem::Work() {
 	_WorkSelectedItem();
 }
 void TitleSceneMenuItem::Render() {
+    // Forgive me for what I am about to do.
+    pos_.x += 2;
+    pos_.y += 2;
+    objText_->SetPosition(pos_);
+    objText_->SetVertexColor(D3DCOLOR_ARGB(128, 0, 0, 0));
+	objText_->Render();
+    pos_.x -= 2;
+    pos_.y -= 2;
 	objText_->SetPosition(pos_);
+    objText_->SetVertexColor(D3DCOLOR_ARGB(255, 255, 255, 255));
 	objText_->Render();
 
-	if (menu_->GetSelectedMenuItem() == this) {
+    bool bSelected = menu_->GetSelectedMenuItem() == this;
+
+    pos_.x = Math::Lerp::Linear(pos_.x, posRoot_.x + (bSelected ? 32 : 0), 0.2);
+    // pos_.y = Math::Lerp::Linear(pos_.y, posRoot_.y + (bSelected ? 64 : 0), 0.01);
+
+	if (bSelected) {
 		DirectGraphics* graphics = DirectGraphics::GetBase();
 		graphics->SetBlendMode(MODE_BLEND_ADD_RGB);
 

@@ -667,6 +667,13 @@ namespace gstd {
 			return value(script_type_manager::get_int_type(), argv[0].as_int() % argv[1].as_int());
 	}
 
+	//Allows for non-integer side counts because A. no division by 0 errors and B. why not 
+	DNH_FUNCAPI_DEF_(BaseFunction::apo) {
+		double n = argv->as_real();
+		double r = n > 2 ? cos(GM_PI / n) : 0;
+		return value(script_type_manager::get_real_type(), r);
+	}
+
 	value BaseFunction::predecessor(script_machine* machine, int argc, const value* argv) {
 		_null_check(machine, argv, argc);
 
@@ -731,6 +738,20 @@ namespace gstd {
 	value BaseFunction::length(script_machine* machine, int argc, const value* argv) {
 		return value(script_type_manager::get_int_type(), (int64_t)argv->length_as_array());
 	}
+
+	DNH_FUNCAPI_DEF_(BaseFunction::generate) {
+		size_t size = std::max(argv[0].as_int(), 0i64);
+		value fill = argv[1];
+
+		value res;
+		std::vector<value> resArr(size);
+		type_data* type = script_type_manager::get_instance()->get_array_type(fill.get_type());
+
+		std::fill(resArr.begin(), resArr.end(), fill);
+
+		res.reset(type, resArr);
+		return res;
+	}
 	value BaseFunction::resize(script_machine* machine, int argc, const value* argv) {
 		_null_check(machine, &argv[0], 1);
 		if (argc == 3)
@@ -745,7 +766,7 @@ namespace gstd {
 		}
 
 		size_t oldSize = val->length_as_array();
-		size_t newSize = argv[1].as_int();
+		size_t newSize = std::max(argv[1].as_int(), 0i64);
 		type_data* newType = val->get_type();
 
 		value res;
@@ -778,15 +799,109 @@ namespace gstd {
 
 			res.reset(newType, arrVal);
 		}
-		else {
-			res = *val;
-		}
-		res.make_unique();
 		return res;
 	}
 
-	value BaseFunction::contains(script_machine* machine, int argc, const value* argv) {
-		_null_check(machine, &argv[0], 1);
+	DNH_FUNCAPI_DEF_(BaseFunction::reverse) {
+		_null_check(machine, argv, argc);
+
+		const value* val = &argv[0];
+		type_data* valType = val->get_type();
+
+		if (valType->get_kind() != type_data::tk_array) {
+			_raise_error_unsupported(machine, argv->get_type(), "reverse");
+			return value();
+		}
+
+		size_t size = val->length_as_array();
+
+		value res = *val;
+		res.make_unique();
+
+		std::vector<value> arrVal(size);
+
+		for (size_t i = 0; i < size; ++i) arrVal[i] = val->index_as_array(size - i - 1);
+
+		res.reset(valType, arrVal);
+		return res;
+	}
+
+	DNH_FUNCAPI_DEF_(BaseFunction::sort) {
+		_null_check(machine, argv, argc);
+
+		const value* val = &argv[0];
+		type_data* valType = val->get_type();
+
+		bool bRev = false;
+		if (argc == 2) bRev = argv[1].as_boolean();
+
+		if (valType->get_kind() != type_data::tk_array) {
+			_raise_error_unsupported(machine, argv->get_type(), "sort");
+			return value();
+		}
+	
+
+		size_t size = val->length_as_array();
+
+		value res = *val;
+		res.make_unique();
+
+		std::vector<value> arrVal(size);
+
+		// Populate source array
+		for (size_t i = 0; i < size; ++i)
+			arrVal[i] = val->index_as_array(i);
+
+		for (size_t i = 0; i < size - 1; ++i) {
+			size_t idx = i;
+			for (size_t j = i + 1; j < size; ++j) {
+				value args[2] = { arrVal[idx], arrVal[j] };
+				if (compare(machine, 2, args).as_int() == (bRev ? -1 : 1)) {
+					idx = j;
+				}
+			}
+			std::swap(arrVal[i], arrVal[idx]);
+		}
+
+		res.reset(valType, arrVal);
+		return res;
+	}
+
+	DNH_FUNCAPI_DEF_(BaseFunction::range) {
+		int64_t start = 0;
+		int64_t stop = 0;
+		int64_t step = 1;
+
+		if (argc == 1) stop = argv[0].as_int();
+		else {
+			start = argv[0].as_int();
+			stop = argv[1].as_int();
+			if (argc == 3) step = argv[2].as_int();
+		}
+
+		if (argc < 3 && stop < start) step = -1;
+		else if (argc == 3 && (step == 0
+			|| (start > stop && step > 0)
+			|| (start < stop && step < 0)
+			)) {
+			std::string error = "Invalid range.";
+			machine->raise_error(error);
+			return value();
+		}
+
+		value result;
+		std::vector<value> resArr;
+
+		for (int64_t i = start; (step > 0 && i < stop) || (step < 0 && i > stop); i += step) {
+			resArr.push_back(value(script_type_manager::get_int_type(), i));
+		}
+
+		result.reset(script_type_manager::get_int_array_type(), resArr);
+		return result;
+	}
+
+	DNH_FUNCAPI_DEF_(BaseFunction::contains) {
+		_null_check(machine, argv, argc);
 
 		const value* arr = &argv[0];
 		type_data* arrType = arr->get_type();
@@ -807,6 +922,114 @@ namespace gstd {
 				break;
 			}
 		}
+		return value(script_type_manager::get_boolean_type(), res);
+	}
+
+	DNH_FUNCAPI_DEF_(BaseFunction::indexof) {
+		_null_check(machine, argv, argc);
+
+		const value* arr = &argv[0];
+		type_data* arrType = arr->get_type();
+
+		if (arrType->get_kind() != type_data::tk_array) {
+			_raise_error_unsupported(machine, argv->get_type(), "indexof");
+			return value();
+		}
+
+		const value& val = argv[1];
+		size_t length = arr->length_as_array();
+
+		int64_t target = 0;
+		if (argc == 3) target = argv[2].as_int();
+
+		bool bRev = target < 0;
+
+		int64_t res = -1;
+		size_t hits = 0;
+		size_t maxHit = bRev ? -target - 1 : target;
+
+		auto check = [&](size_t ind) -> bool {
+			value args[2] = { arr->index_as_array(ind), val };
+			if (compare(machine, 2, args).as_int() == 0) {
+				if (hits == maxHit)
+					res = ind;
+				else
+					++hits;
+			}
+			return res != -1;
+		};
+
+		if (bRev)
+			for (size_t i = length - 1; !check(i) && i > 0; --i);
+		else
+			for (size_t i = 0; !check(i) && i < length - 1; ++i);
+
+		return value(script_type_manager::get_int_type(), res);
+	}
+
+	DNH_FUNCAPI_DEF_(BaseFunction::matches) {
+		_null_check(machine, argv, argc);
+
+		const value* arr = &argv[0];
+		type_data* arrType = arr->get_type();
+
+		if (arrType->get_kind() != type_data::tk_array) {
+			_raise_error_unsupported(machine, argv->get_type(), "matches");
+			return value();
+		}
+
+		const value& val = argv[1];
+		size_t length = arr->length_as_array();
+
+		int64_t res = 0;
+		for (size_t i = 0; i < length; ++i) {
+			value args[2] = { arr->index_as_array(i), val };
+			if (compare(machine, 2, args).as_int() == 0) {
+				++res;
+			}
+		}
+		return value(script_type_manager::get_int_type(), res);
+	}
+
+	DNH_FUNCAPI_DEF_(BaseFunction::all) {
+		_null_check(machine, argv, argc);
+
+		const value* arr = &argv[0];
+		type_data* arrType = arr->get_type();
+
+		if (arrType->get_kind() != type_data::tk_array) {
+			_raise_error_unsupported(machine, argv->get_type(), "all");
+			return value();
+		}
+
+		const value& val = argv[1];
+		size_t length = arr->length_as_array();
+
+		bool res = true;
+		for (size_t i = 0; i < length && res; ++i)
+			res = arr->index_as_array(i).as_boolean();
+
+		return value(script_type_manager::get_boolean_type(), res);
+	}
+
+	DNH_FUNCAPI_DEF_(BaseFunction::any) {
+		_null_check(machine, argv, argc);
+
+		const value* arr = &argv[0];
+		type_data* arrType = arr->get_type();
+
+		if (arrType->get_kind() != type_data::tk_array) {
+			_raise_error_unsupported(machine, argv->get_type(), "any");
+			return value();
+		}
+
+		const value& val = argv[1];
+		size_t length = arr->length_as_array();
+
+		bool res = false;
+		for (size_t i = 0; i < length && !res; ++i)
+			res = arr->index_as_array(i).as_boolean();
+
 		return value(script_type_manager::get_boolean_type(), res);
 	}
 
@@ -1131,17 +1354,32 @@ namespace gstd {
 		double r = std::floor(argv->as_real() + 0.5);
 		return value(script_type_manager::get_real_type(), r);
 	}
-	value BaseFunction::truncate(script_machine* machine, int argc, const value* argv) {
+	DNH_FUNCAPI_DEF_(BaseFunction::round_base) {
+		double v = argv[0].as_real();
+		double base = argv[1].as_real();
+		double r = std::floor(v / base + 0.5) * base;
+		return value(script_type_manager::get_real_type(), r);
+	}
+	DNH_FUNCAPI_DEF_(BaseFunction::truncate) {
 		double r = argv->as_real();
 		return value(script_type_manager::get_real_type(), (r > 0) ? std::floor(r) : std::ceil(r));
 	}
 	value BaseFunction::ceil(script_machine* machine, int argc, const value* argv) {
 		return value(script_type_manager::get_real_type(), std::ceil(argv->as_real()));
 	}
-	value BaseFunction::floor(script_machine* machine, int argc, const value* argv) {
+	DNH_FUNCAPI_DEF_(BaseFunction::ceil_base) {
+		double v = argv[0].as_real();
+		double base = argv[1].as_real();
+		return value(script_type_manager::get_real_type(), std::ceil(v / base) * base);
+	}
+	DNH_FUNCAPI_DEF_(BaseFunction::floor) {
 		return value(script_type_manager::get_real_type(), std::floor(argv->as_real()));
 	}
-
+	DNH_FUNCAPI_DEF_(BaseFunction::floor_base) {
+		double v = argv[0].as_real();
+		double base = argv[1].as_real();
+		return value(script_type_manager::get_real_type(), std::floor(v / base) * base);
+	}
 	value BaseFunction::_script_absolute(int argc, const value* argv) {
 		return value(script_type_manager::get_real_type(), std::fabs(argv->as_real()));
 	}

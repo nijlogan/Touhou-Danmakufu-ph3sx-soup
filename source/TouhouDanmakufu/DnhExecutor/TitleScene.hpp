@@ -36,10 +36,11 @@ public:
 class TitleSceneMenuItem : public TextLightUpMenuItem {
 	shared_ptr<DxTextRenderObject> objText_;
 	POINT pos_;
+    POINT posRoot_;
 
 	TitleScene* _GetTitleScene() { return (TitleScene*)menu_; }
 public:
-	TitleSceneMenuItem(std::wstring text, std::wstring description, int x, int y);
+	TitleSceneMenuItem(std::wstring text, std::wstring description, int x, int y, int id);
 	virtual ~TitleSceneMenuItem();
 
 	void Work();

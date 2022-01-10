@@ -17,11 +17,14 @@ DxScriptObjectBase::DxScriptObjectBase() {
 	bVisible_ = true;
 	priRender_ = 50;
 	bDeleted_ = false;
+	bQueuedToDelete_ = false;
 	bActive_ = false;
+	bAutoDeleteEnable_ = true;
+	frameExist_ = 0;
 	manager_ = nullptr;
 	idObject_ = DxScript::ID_INVALID;
 	idScript_ = ScriptClientBase::ID_SCRIPT_FREE;
-	typeObject_ = TypeObject::Invalid;
+	typeObject_ = TypeObject::Base;
 }
 DxScriptObjectBase::~DxScriptObjectBase() {
 	//if (manager_ != nullptr && idObject_ != DxScript::ID_INVALID)
@@ -481,7 +484,9 @@ void DxScriptParticleListObject2D::SetRenderState() {
 	graphics->SetTextureFilter(filterMin_, filterMag_, filterMip_);
 }
 void DxScriptParticleListObject2D::CleanUp() {
-	GetParticlePointer()->ClearInstance();
+	ParticleRenderer2D* obj = GetParticlePointer();
+	if (obj->GetAutoClearInstance())
+		obj->ClearInstance();
 }
 
 //****************************************************************************
@@ -524,7 +529,9 @@ void DxScriptParticleListObject3D::SetRenderState() {
 	graphics->SetTextureFilter(filterMin_, filterMag_, filterMip_);
 }
 void DxScriptParticleListObject3D::CleanUp() {
-	GetParticlePointer()->ClearInstance();
+	ParticleRenderer3D* obj = GetParticlePointer();
+	if (obj->GetAutoClearInstance())
+		obj->ClearInstance();
 }
 
 //****************************************************************************
@@ -1417,9 +1424,30 @@ void DxScriptObjectManager::DeleteObjectByScriptID(int64_t idScript) {
 
 	for (size_t iObj = 0; iObj < obj_.size(); ++iObj) {
 		if (obj_[iObj] == nullptr) continue;
-		if (obj_[iObj]->GetScriptID() != idScript) continue;
+		if (obj_[iObj]->GetScriptID() != idScript || !obj_[iObj]->IsAutoDeleteEnable()) continue;
 		DeleteObject(obj_[iObj]);
 	}
+}
+void DxScriptObjectManager::OrphanObjectByScriptID(int64_t idScript) {
+	if (idScript == ScriptClientBase::ID_SCRIPT_FREE) return;
+
+	for (size_t iObj = 0; iObj < obj_.size(); ++iObj) {
+		if (obj_[iObj] == nullptr) continue;
+		if (obj_[iObj]->GetScriptID() != idScript) continue;
+		obj_[iObj]->idScript_ = ScriptClientBase::ID_SCRIPT_FREE;
+	}
+}
+std::vector<int> DxScriptObjectManager::GetObjectByScriptID(int64_t idScript) {
+	std::vector<int> res;
+
+	if (idScript != ScriptClientBase::ID_SCRIPT_FREE) {
+		for (size_t iObj = 0; iObj < obj_.size(); ++iObj) {
+			if (obj_[iObj] == nullptr) continue;
+			if (obj_[iObj]->GetScriptID() != idScript) continue;
+			res.push_back(obj_[iObj]->idObject_);
+		}
+	}
+	return res;
 }
 
 shared_ptr<Shader> DxScriptObjectManager::GetShader(int index) {
@@ -1436,6 +1464,7 @@ void DxScriptObjectManager::WorkObject() {
 			continue;
 		}
 		obj->Work();
+		++obj->frameExist_;
 		++itr;
 	}
 
@@ -1481,8 +1510,8 @@ void DxScriptObjectManager::RenderObject() {
 }
 void DxScriptObjectManager::CleanupObject() {
 	for (auto& obj : listActiveObject_) {
-		if (obj)
-			obj->CleanUp();
+		if (obj) obj->CleanUp();
+		if (obj && obj->IsQueuedForDeletion()) DeleteObject(obj); // Double check just in case
 	}
 }
 

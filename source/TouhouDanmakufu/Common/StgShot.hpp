@@ -32,7 +32,7 @@ public:
 	};
 
 	enum {
-		SHOT_MAX = 8192,
+		SHOT_MAX = 16384,
 	};
 protected:
 	StgStageController* stageController_;
@@ -69,8 +69,10 @@ public:
 	void SetShotDeleteClip(const DxRect<LONG>& clip) { rcDeleteClip_ = clip; }
 	DxRect<LONG>* GetShotDeleteClip() { return &rcDeleteClip_; }
 
-	void DeleteInCircle(int typeDelete, int typeTo, int typeOwner, int cx, int cy, int* radius);
+	size_t DeleteInCircle(int typeDelete, int typeTo, int typeOwner, int cx, int cy, int* radius);
+	size_t DeleteInRegularPolygon(int typeDelete, int typeTo, int typeOwner, int cx, int cy, int* radius, int edges, double angle);
 	std::vector<int> GetShotIdInCircle(int typeOwner, int cx, int cy, int* radius);
+	std::vector<int> GetShotIdInRegularPolygon(int typeOwner, int cx, int cy, int* radius, int edges, double angle);
 	size_t GetShotCount(int typeOwner);
 	size_t GetShotCountAll() { return listObj_.size(); }
 
@@ -299,6 +301,11 @@ protected:
 	int frameGrazeInvalid_;
 	int frameGrazeInvalidStart_;
 	int frameFadeDelete_;
+
+	bool bPenetrateShot_; // Translation: Does The Shot Lose Penetration Points Upon Colliding With Another Shot And Not An Enemy
+
+	int frameEnemyHitInvalid_;
+	std::list<std::pair<ref_unsync_weak_ptr<StgEnemyObject>, int>> listHitEnemy_;
 	
 	bool bRequestedPlayerDeleteEvent_;
 	double damage_;
@@ -328,7 +335,7 @@ protected:
 	virtual void _DeleteInLife();
 	virtual void _DeleteInAutoClip();
 	virtual void _DeleteInFadeDelete();
-	virtual void _DeleteInAutoDeleteFrame();
+	void _DeleteInAutoDeleteFrame();
 	void _CommonWorkTask();
 
 	virtual void _Move();
@@ -379,6 +386,14 @@ public:
 	int GetGrazeInvalidFrame() { return frameGrazeInvalidStart_; }
 	void SetGrazeFrame(int frame) { frameGrazeInvalid_ = frame; }
 	bool IsValidGraze() { return frameGrazeInvalid_ <= 0; }
+
+	void SetPenetrateShotEnable(bool enable) { bPenetrateShot_ = enable; }
+	bool GetPenetrateShotEnable() { return bPenetrateShot_; }
+
+	void SetEnemyIntersectionInvalidFrame(int frame) { frameEnemyHitInvalid_ = frame; }
+	int GetEnemyIntersectionInvalidFrame() { return frameEnemyHitInvalid_;  }
+
+	std::list<std::pair<ref_unsync_weak_ptr<StgEnemyObject>, int>>& GetEnemyIntersectionInvalidFramePairList() { return listHitEnemy_;  }
 
 	int GetDelay() { return delay_.time; }
 	void SetDelay(int delay) { delay_.time = delay; }
@@ -459,13 +474,17 @@ public:
 class StgLaserObject : public StgShotObject {
 protected:
 	int length_;
-	int widthRender_;		//Edge-to-edge
+	float lengthF_;
+	int widthRender_;
 	int widthIntersection_;
+	float extendRate_;
+	int maxLength_;
 	float invalidLengthStart_;
 	float invalidLengthEnd_;
 	float itemDistance_;
 
 	void _AddIntersectionRelativeTarget();
+	void _ExtendLength();
 public:
 	StgLaserObject(StgStageController* stageController);
 
@@ -481,19 +500,21 @@ public:
 	virtual bool GetIntersectionTargetList_NoVector(StgShotData* shotData) { return false; }
 
 	int GetLength() { return length_; }
-	void SetLength(int length) { length_ = length; }
+	void SetLength(int length) { length_ = length; lengthF_ = (float)length; }
 	int GetRenderWidth() { return widthRender_; }
 	void SetRenderWidth(int width) {
 		width = std::max(width, 0);
 		widthRender_ = width;
 		if (widthIntersection_ < 0) widthIntersection_ = width / 4;
 	}
+	void SetExtendRate(float rate) { extendRate_ = rate; }
+	void SetMaxLength(int max) { maxLength_ = max; }
 	int GetIntersectionWidth() { return widthIntersection_; }
 	void SetIntersectionWidth(int width) { widthIntersection_ = std::max(width, 0); }
-
 	void SetInvalidLength(float start, float end) { invalidLengthStart_ = start; invalidLengthEnd_ = end; }
 
 	void SetItemDistance(float dist) { itemDistance_ = std::max(dist, 0.1f); }
+	float GetItemDistance() { return itemDistance_; }
 };
 
 //*******************************************************************
@@ -527,6 +548,7 @@ public:
 class StgStraightLaserObject : public StgLaserObject {
 protected:
 	double angLaser_;
+	double angVelLaser_;
 
 	bool bUseSouce_;
 	bool bUseEnd_;
@@ -539,7 +561,6 @@ protected:
 	bool bLaserExpand_;
 
 	virtual void _DeleteInAutoClip();
-	virtual void _DeleteInAutoDeleteFrame();
 	virtual void _SendDeleteEvent(int type);
 public:
 	StgStraightLaserObject(StgStageController* stageController);
@@ -551,16 +572,28 @@ public:
 
 	double GetLaserAngle() { return angLaser_; }
 	void SetLaserAngle(double angle) { angLaser_ = angle; }
+	void SetLaserAngularVelocity(double angVel) { angVelLaser_ = angVel; }
 	void SetFadeDelete() { if (frameFadeDelete_ < 0) frameFadeDelete_ = FRAME_FADEDELETE_LASER; }
 
 	void SetSourceEnable(bool bEnable) { bUseSouce_ = bEnable; }
 	void SetEndEnable(bool bEnable) { bUseEnd_ = bEnable; }
 	void SetEndGraphic(int gr) { idImageEnd_ = gr; }
+	void SetEndPosition(float x, float y) {
+		SetLength(hypotf(x - position_.x, y - position_.y));
+		extendRate_ = 0;
+		maxLength_ = 0;
+		angLaser_ = atan2f(y - position_.y, x - position_.x);
+	}
+	
+	D3DXVECTOR2 GetEndPosition() {
+		return D3DXVECTOR2(position_.x + length_ * cosf(angLaser_), position_.y + length_ * sinf(angLaser_));
+	}
 
 	void SetSourceEndScale(const D3DXVECTOR2& s) { delaySize_ = s; }
 
 	void SetLaserExpand(bool b) { bLaserExpand_ = b; }
 	bool GetLaserExpand() { return bLaserExpand_; }
+	
 };
 
 //*******************************************************************
@@ -581,18 +614,26 @@ public:
 	};
 protected:
 	std::list<LaserNode> listPosition_;
+	std::list<LaserNode> listPositionC_;
 
 	float posXO_;
 	float posYO_;
 
 	float tipDecrement_;
-	bool bCap_;
 
 	D3DXVECTOR2 posOrigin_;
+	bool bCap_;
+	bool bConnect_;
+	bool bUniformMove_;
+	int smooth_;
+
+	double angLaser_;
+	double angVelLaser_;
 
 	virtual void _DeleteInAutoClip();
 	virtual void _Move();
 	virtual void _SendDeleteEvent(int type);
+	void _UpdateConnectedPositionList();
 public:
 	StgCurveLaserObject(StgStageController* stageController);
 
@@ -603,6 +644,9 @@ public:
 
 	void SetTipDecrement(float dec) { tipDecrement_ = dec; }
 	void SetTipCapping(bool enable) { bCap_ = enable; }
+	void SetTipConnecting(bool enable) { bConnect_ = enable; }
+	void SetUniformMotionEnable(bool enable) { bUniformMove_ = enable; }
+	void SetAngleSmoothness(int amount) { smooth_ = amount; }
 
 	LaserNode CreateNode(const D3DXVECTOR2& pos, const D3DXVECTOR2& rFac, float widthMul, D3DCOLOR col = 0xffffffff);
 	bool GetNode(size_t indexNode, std::list<LaserNode>::iterator& res);
@@ -638,7 +682,10 @@ public:
 		BASEPOINT_RESET = -256 * 256,
 	};
 private:
+	StgStageController* stageController_;
 	ref_unsync_weak_ptr<StgMoveObject> parent_;
+	ref_unsync_weak_ptr<StgMoveParent> shotParent_;
+	bool bAutoDelete_;
 
 	int idShotData_;
 	int typeOwner_;
@@ -665,6 +712,8 @@ private:
 	double angleBase_;
 	double angleArgument_;
 
+    float extra_;
+
 	int delay_;
 	//bool delayMove_;
 
@@ -673,11 +722,12 @@ private:
 
 	std::vector<StgPatternShotTransform> listTransformation_;
 public:
-	StgPatternShotObjectGenerator();
+	StgPatternShotObjectGenerator(StgStageController* stageController);
 	~StgPatternShotObjectGenerator();
 
 	virtual void Render() {}
 	virtual void SetRenderState() {}
+	virtual void CleanUp();
 
 	void CopyFrom(ref_unsync_ptr<StgPatternShotObjectGenerator> other) {
 		StgPatternShotObjectGenerator::CopyFrom(other.get());
@@ -689,6 +739,8 @@ public:
 	void ClearTransformation() { listTransformation_.clear(); }
 
 	void SetParent(ref_unsync_ptr<StgMoveObject> obj) { parent_ = obj; }
+	void SetShotParent(ref_unsync_ptr<StgMoveParent> obj) { shotParent_ = obj; }
+	void SetAutoDelete(bool enable) { bAutoDelete_ = enable; }
 
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);
 
@@ -721,6 +773,9 @@ public:
 		angleBase_ = base;
 		angleArgument_ = arg;
 	}
+    void SetExtraData(float e) {
+        extra_ = e;
+    }
 
 	void SetDelay(int delay) { delay_ = delay; }
 	//void SetDelayMotion(bool b) { delayMove_ = b; }

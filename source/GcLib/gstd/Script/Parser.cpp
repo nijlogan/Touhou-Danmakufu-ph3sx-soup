@@ -121,10 +121,13 @@ static const std::vector<function> base_operations = {
 	{ "successor", BaseFunction::successor, 1 },
 
 	{ "round", BaseFunction::round, 1 },
+	{ "round_base", BaseFunction::round_base, 2 },
 	{ "trunc", BaseFunction::truncate, 1 },
 	{ "truncate", BaseFunction::truncate, 1 },
 	{ "ceil", BaseFunction::ceil, 1 },
+	{ "ceil_base", BaseFunction::ceil_base, 2 },
 	{ "floor", BaseFunction::floor, 1 },
+	{ "floor_base", BaseFunction::floor_base, 2 },
 	//{ "abs", BaseFunction::absolute, 1 },
 	{ "absolute", BaseFunction::absolute, 1 },
 
@@ -134,6 +137,7 @@ static const std::vector<function> base_operations = {
 	{ "divide", BaseFunction::divide, 2 },
 	{ "remainder", BaseFunction::remainder_, 2 },
 	{ "modc", BaseFunction::modc, 2 },
+	{ "apo", BaseFunction::apo, 1 },
 	{ "power", BaseFunction::power, 2 },
 
 	{ "as_int_array", BaseFunction::cast_int_array, 1 },
@@ -142,10 +146,26 @@ static const std::vector<function> base_operations = {
 	{ "as_char_array", BaseFunction::cast_char_array, 1 },
 	{ "as_x_array", BaseFunction::cast_x_array, 2 },
 
+	{ "generate", BaseFunction::generate, 2 },
+
 	//{ "length", BaseFunction::length, 1 },
 	{ "resize", BaseFunction::resize, 2 },
 	{ "resize", BaseFunction::resize, 3 },	//Overloaded
+
+	{ "reverse", BaseFunction::reverse, 1 },
+	{ "sort", BaseFunction::sort, 1 },
+	{ "sort", BaseFunction::sort, 2 }, //Overloaded
+
+	{ "range", BaseFunction::range, 1 },	
+	{ "range", BaseFunction::range, 2 },	//Overloaded
+	{ "range", BaseFunction::range, 3 },	//Overloaded x2
+
 	{ "contains", BaseFunction::contains, 2 },
+	{ "indexof", BaseFunction::indexof, 2 },
+	{ "indexof", BaseFunction::indexof, 3 },	//Overloaded
+	{ "matches", BaseFunction::matches, 2 },
+	{ "all", BaseFunction::all, 1 },
+	{ "any", BaseFunction::any, 1 },
 
 	{ "replace", BaseFunction::replace, 3 },
 	{ "remove", BaseFunction::remove, -3 }, //1 fixed + ... -> 2 minimum

@@ -190,7 +190,7 @@ void StgShotManager::AddShot(ref_unsync_ptr<StgShotObject> obj) {
 	listObj_.push_back(obj);
 }
 
-void StgShotManager::DeleteInCircle(int typeDelete, int typeTo, int typeOwner, int cx, int cy, int* radius) {
+size_t StgShotManager::DeleteInCircle(int typeDelete, int typeTo, int typeOwner, int cx, int cy, int* radius) {
 	int r = radius ? *radius : 0;
 	int rr = r * r;
 
@@ -198,6 +198,8 @@ void StgShotManager::DeleteInCircle(int typeDelete, int typeTo, int typeOwner, i
 	int rect_y1 = cy - r;
 	int rect_x2 = cx + r;
 	int rect_y2 = cy + r;
+
+	size_t res = 0;
 
 	for (ref_unsync_ptr<StgShotObject>& obj : listObj_) {
 		if (obj->IsDeleted()) continue;
@@ -213,6 +215,13 @@ void StgShotManager::DeleteInCircle(int typeDelete, int typeTo, int typeOwner, i
 			bInCircle = bPassAABB && Math::HypotSq<int64_t>(cx - sx, cy - sy) <= rr;
 		}
 		if (bInCircle) {
+			if (obj->GetObjectType() == TypeObject::Shot)
+				++res;
+			else {
+				StgLaserObject* laser = dynamic_cast<StgLaserObject*>(obj.get());
+				res += floor(laser->GetLength() / laser->GetItemDistance());
+			}
+
 			if (typeTo == TO_TYPE_IMMEDIATE)
 				obj->DeleteImmediate();
 			else if (typeTo == TO_TYPE_FADE)
@@ -221,6 +230,63 @@ void StgShotManager::DeleteInCircle(int typeDelete, int typeTo, int typeOwner, i
 				obj->ConvertToItem();
 		}
 	}
+
+	return res;
+}
+size_t StgShotManager::DeleteInRegularPolygon(int typeDelete, int typeTo, int typeOwner, int cx, int cy, int* radius, int edges, double angle) {
+	int r = radius ? *radius : 0;
+
+	int rect_x1 = cx - r;
+	int rect_y1 = cy - r;
+	int rect_x2 = cx + r;
+	int rect_y2 = cy + r;
+
+	size_t res = 0;
+
+	for (ref_unsync_ptr<StgShotObject>& obj : listObj_) {
+		if (obj->IsDeleted()) continue;
+		if ((typeOwner != StgShotObject::OWNER_NULL) && (obj->GetOwnerType() != typeOwner)) continue;
+		if (typeDelete == DEL_TYPE_SHOT && obj->IsSpellResist()) continue;
+
+		int sx = obj->GetPositionX();
+		int sy = obj->GetPositionY();
+
+		bool bInPolygon = radius == nullptr;
+		if (!bInPolygon && ((sx > rect_x1 && sy > rect_y1) && (sx < rect_x2 && sy < rect_y2))) {
+			float f = GM_PI / (float) edges;
+			float cf = cosf(f);
+			float dx = sx - cx;
+			float dy = sy - cy;
+			float dist = hypotf(dy, dx);
+				
+			bInPolygon = dist <= r;
+			if (bInPolygon) {
+				double r_apothem = r * cf;
+				bInPolygon = dist <= r_apothem;
+				if (!bInPolygon) {
+					double ang = fmod(Math::NormalizeAngleRad(atan2(dy, dx)) - Math::DegreeToRadian(angle), 2 * f);
+					bInPolygon = dist <= (r_apothem / cos(ang - f));
+				}
+			}
+		}
+		if (bInPolygon) {
+			if (obj->GetObjectType() == TypeObject::Shot)
+				++res;
+			else {
+				StgLaserObject* laser = dynamic_cast<StgLaserObject*>(obj.get());
+				res += floor(laser->GetLength() / laser->GetItemDistance());
+			}
+
+			if (typeTo == TO_TYPE_IMMEDIATE)
+				obj->DeleteImmediate();
+			else if (typeTo == TO_TYPE_FADE)
+				obj->SetFadeDelete();
+			else if (typeTo == TO_TYPE_ITEM)
+				obj->ConvertToItem();
+		}
+	}
+
+	return res;
 }
 
 std::vector<int> StgShotManager::GetShotIdInCircle(int typeOwner, int cx, int cy, int* radius) {
@@ -242,10 +308,51 @@ std::vector<int> StgShotManager::GetShotIdInCircle(int typeOwner, int cx, int cy
 
 		bool bInCircle = radius == nullptr;
 		if (!bInCircle) {
-			bool bPassAABB = (sx > rect_x1 && sy > rect_y1) && (sx < rect_x2&& sy < rect_y2);
+			bool bPassAABB = (sx > rect_x1 && sy > rect_y1) && (sx < rect_x2 && sy < rect_y2);
 			bInCircle = bPassAABB && Math::HypotSq<int64_t>(cx - sx, cy - sy) <= rr;
 		}
 		if (bInCircle)
+			res.push_back(obj->GetObjectID());
+	}
+
+	return res;
+}
+std::vector<int> StgShotManager::GetShotIdInRegularPolygon(int typeOwner, int cx, int cy, int* radius, int edges, double angle) {
+	int r = radius ? *radius : 0;
+	int rr = r * r;
+
+	int rect_x1 = cx - r;
+	int rect_y1 = cy - r;
+	int rect_x2 = cx + r;
+	int rect_y2 = cy + r;
+
+	std::vector<int> res;
+	for (ref_unsync_ptr<StgShotObject>& obj : listObj_) {
+		if (obj->IsDeleted()) continue;
+		if ((typeOwner != StgShotObject::OWNER_NULL) && (obj->GetOwnerType() != typeOwner)) continue;
+
+		int sx = obj->GetPositionX();
+		int sy = obj->GetPositionY();
+
+		bool bInPolygon = radius == nullptr;
+		if (!bInPolygon && ((sx > rect_x1 && sy > rect_y1) && (sx < rect_x2 && sy < rect_y2))) {
+			float f = GM_PI / (float)edges;
+			float cf = cosf(f);
+			float dx = sx - cx;
+			float dy = sy - cy;
+			float dist = hypotf(dy, dx);
+
+			bInPolygon = dist <= r;
+			if (bInPolygon) {
+				double r_apothem = r * cf;
+				bInPolygon = dist <= r_apothem;
+				if (!bInPolygon) {
+					double ang = fmod(Math::NormalizeAngleRad(atan2(dy, dx)) - Math::DegreeToRadian(angle), 2 * f);
+					bInPolygon = dist <= (r_apothem / cos(ang - f));
+				}
+			}
+		}
+		if (bInPolygon)
 			res.push_back(obj->GetObjectID());
 	}
 
@@ -792,6 +899,9 @@ StgShotObject::StgShotObject(StgStageController* stageController) : StgMoveObjec
 	frameGrazeInvalid_ = 0;
 	frameGrazeInvalidStart_ = -1;
 
+	bPenetrateShot_ = true;
+	frameEnemyHitInvalid_ = 0;
+
 	frameFadeDelete_ = -1;
 	frameAutoDelete_ = INT_MAX;
 
@@ -884,13 +994,9 @@ void StgShotObject::_DeleteInFadeDelete() {
 void StgShotObject::_DeleteInAutoDeleteFrame() {
 	if (IsDeleted() || delay_.time > 0) return;
 
-	if (frameAutoDelete_ <= 0) {
-		_SendDeleteEvent(StgShotManager::BIT_EV_DELETE_IMMEDIATE);
-		auto objectManager = stageController_->GetMainObjectManager();
-		objectManager->DeleteObject(this);
-		return;
-	}
-	frameAutoDelete_ = std::max(0, frameAutoDelete_ - 1);
+	if (frameAutoDelete_ <= 0)
+		SetFadeDelete();
+	else --frameAutoDelete_;
 }
 void StgShotObject::_CommonWorkTask() {
 	if (bEnableMovement_) {
@@ -902,6 +1008,18 @@ void StgShotObject::_CommonWorkTask() {
 		_DeleteInFadeDelete();
 	}
 	--frameGrazeInvalid_;
+
+	if (listHitEnemy_.size() > 0) {
+		auto& itr = listHitEnemy_.begin();
+		while (itr != listHitEnemy_.end()) {
+			--itr->second;
+			if (itr->second == 0)
+				itr = listHitEnemy_.erase(itr);
+			else
+				++itr;
+		}
+	}
+
 }
 
 void StgShotObject::Intersect(StgIntersectionTarget* ownTarget, StgIntersectionTarget* otherTarget) {
@@ -939,18 +1057,24 @@ void StgShotObject::Intersect(StgIntersectionTarget* ownTarget, StgIntersectionT
 		break;
 	}
 	case StgIntersectionTarget::TYPE_ENEMY:
-	case StgIntersectionTarget::TYPE_ENEMY_SHOT:
 	{
-		//Don't reduce penetration with lasers
-		if (!bSpellResist_ && dynamic_cast<StgLaserObject*>(this) == nullptr) {
-			--life_;
-			if (life_ == 0) {
-				_RequestPlayerDeleteEvent(obj.IsExists() ? obj->GetDxScriptObjectID() : DxScript::ID_INVALID);
-			}
+		if (!bSpellResist_) {
+			bool bHit = listHitEnemy_.size() == 0 || std::find_if(listHitEnemy_.begin(), listHitEnemy_.end(),
+				[&obj](const std::pair<ref_unsync_weak_ptr<StgEnemyObject>, int>& element) { return element.first == obj; }) == listHitEnemy_.end();
+
+			if (bHit) --life_;
 		}
 		break;
 	}
+	case StgIntersectionTarget::TYPE_ENEMY_SHOT:
+	{
+		if (!bSpellResist_ && bPenetrateShot_) --life_;
+		break;
 	}
+	}
+
+	if (life_ == 0)
+		_RequestPlayerDeleteEvent(obj.IsExists() ? obj->GetDxScriptObjectID() : DxScript::ID_INVALID);
 }
 StgShotData* StgShotObject::_GetShotData(int id) {
 	StgShotData* res = nullptr;
@@ -1374,10 +1498,8 @@ void StgNormalShotObject::Work() {
 
 		{
 			angle_.z += angularVelocity_;
-
-			bool bDelay = delay_.time > 0 && delay_.angle.y != 0;
-
-			double angleZ = bDelay ? delay_.angle.x : angle_.z;
+			bool bDelay = (delay_.time > 0 && delay_.angle.y != 0);
+			double angleZ = angle_.z + (bDelay ? delay_.angle.x : 0);
 			if (StgShotData* shotData = _GetShotData()) {
 				if (!bFixedAngle_ && !bDelay) angleZ += GetDirectionAngle() + Math::DegreeToRadian(90);
 			}
@@ -1672,8 +1794,11 @@ StgLaserObject::StgLaserObject(StgStageController* stageController) : StgShotObj
 	bSpellResist_ = true;
 
 	length_ = 0;
+	lengthF_ = 0;
 	widthRender_ = 0;
 	widthIntersection_ = -1;
+	extendRate_ = 0;
+	maxLength_ = 0;
 	invalidLengthStart_ = 0.1f;
 	invalidLengthEnd_ = 0.1f;
 	frameGrazeInvalidStart_ = 20;
@@ -1722,6 +1847,19 @@ StgIntersectionObject::IntersectionListType StgLaserObject::GetIntersectionTarge
 	return IntersectionListType();
 }
 
+void StgLaserObject::_ExtendLength() {
+	if (extendRate_ != 0) {
+		lengthF_ += extendRate_;
+
+		if (extendRate_ > 0)
+			lengthF_ = std::min(lengthF_, (float)maxLength_);
+		else
+			lengthF_ = std::max(lengthF_, (float)maxLength_);
+
+		length_ = (int)lengthF_;
+	}
+}
+
 //****************************************************************************
 //StgLooseLaserObject(射出型レーザー)
 //****************************************************************************
@@ -1753,8 +1891,10 @@ void StgLooseLaserObject::Work() {
 	//	_AddIntersectionRelativeTarget();
 }
 void StgLooseLaserObject::_Move() {
-	if (delay_.time == 0 || bEnableMotionDelay_)
+	if (delay_.time == 0 || bEnableMotionDelay_) {
 		StgMoveObject::_Move();
+		_ExtendLength();
+	}
 	DxScriptRenderObject::SetX(posX_);
 	DxScriptRenderObject::SetY(posY_);
 
@@ -2032,6 +2172,7 @@ StgStraightLaserObject::StgStraightLaserObject(StgStageController* stageControll
 	typeObject_ = TypeObject::StraightLaser;
 
 	angLaser_ = 0;
+	angVelLaser_ = 0;
 	frameFadeDelete_ = -1;
 
 	bUseSouce_ = true;
@@ -2052,6 +2193,9 @@ void StgStraightLaserObject::Work() {
 	if (bEnableMovement_) {
 		_ProcessTransformAct();
 		_Move();
+		_ExtendLength();
+		
+		if (angVelLaser_ != 0) angLaser_ += angVelLaser_;
 		
 		if (delay_.time > 0)
 			--(delay_.time);
@@ -2089,13 +2233,6 @@ void StgStraightLaserObject::_DeleteInAutoClip() {
 		auto objectManager = stageController_->GetMainObjectManager();
 		objectManager->DeleteObject(this);
 	}
-}
-void StgStraightLaserObject::_DeleteInAutoDeleteFrame() {
-	if (IsDeleted() || delay_.time > 0) return;
-
-	if (frameAutoDelete_ <= 0)
-		SetFadeDelete();
-	else --frameAutoDelete_;
 }
 bool StgStraightLaserObject::GetIntersectionTargetList_NoVector(StgShotData* shotData) {
 	if (scaleX_ < 1 && typeOwner_ != OWNER_PLAYER)
@@ -2344,6 +2481,10 @@ StgCurveLaserObject::StgCurveLaserObject(StgStageController* stageController) : 
 	itemDistance_ = 6.0f;
 
 	bCap_ = false;
+	bConnect_ = false;
+	bUniformMove_ = false;
+	smooth_ = 0;
+
 	posOrigin_ = D3DXVECTOR2(0, 0);
 }
 void StgCurveLaserObject::Work() {
@@ -2363,15 +2504,25 @@ void StgCurveLaserObject::Work() {
 	}
 
 	_CommonWorkTask();
+	if (bConnect_) _UpdateConnectedPositionList();
 	//	_AddIntersectionRelativeTarget();
 }
 void StgCurveLaserObject::_Move() {
-	if (delay_.time == 0 || bEnableMotionDelay_)
+	if (delay_.time == 0 || bEnableMotionDelay_) {
 		StgMoveObject::_Move();
+		_ExtendLength();
+	}
 	DxScriptRenderObject::SetX(posX_);
 	DxScriptRenderObject::SetY(posY_);
 
-	{
+	
+	if (bUniformMove_) {
+		D3DXVECTOR2 vec = D3DXVECTOR2(GetSpeedX(), GetSpeedY());
+		for (LaserNode& iNode : listPosition_) {
+			iNode.pos += vec;
+		}
+	}
+	else {
 		double angleZ = GetDirectionAngle();
 		if (lastAngle_ != angleZ) {
 			lastAngle_ = angleZ;
@@ -2417,9 +2568,18 @@ void StgCurveLaserObject::GetNodePointerList(std::vector<LaserNode*>* listRes) {
 }
 std::list<StgCurveLaserObject::LaserNode>::iterator StgCurveLaserObject::PushNode(const LaserNode& node) {
 	listPosition_.push_front(node);
+
 	while (listPosition_.size() > length_)
 		listPosition_.pop_back();
+
 	return listPosition_.begin();
+}
+
+void StgCurveLaserObject::_UpdateConnectedPositionList() {
+	if (!listPosition_.empty()) {
+		listPositionC_ = listPosition_;
+		listPositionC_.push_back(listPosition_.front());
+	}
 }
 
 void StgCurveLaserObject::_DeleteInAutoClip() {
@@ -2453,7 +2613,9 @@ bool StgCurveLaserObject::GetIntersectionTargetList_NoVector(StgShotData* shotDa
 
 	StgIntersectionManager* intersectionManager = stageController_->GetIntersectionManager();
 
-	size_t countPos = listPosition_.size();
+	auto& listPos = bConnect_ ? listPositionC_ : listPosition_;
+
+	size_t countPos = listPos.size();
 	size_t countIntersection = countPos > 0U ? countPos - 1U : 0U;
 
 	if (countIntersection == 0)
@@ -2469,7 +2631,7 @@ bool StgCurveLaserObject::GetIntersectionTargetList_NoVector(StgShotData* shotDa
 	int posInvalidE = (int)(countPos * iLengthE);
 	float iWidth = widthIntersection_ * hitboxScale_.x;
 
-	std::list<LaserNode>::iterator itr = listPosition_.begin();
+	std::list<LaserNode>::iterator itr = listPos.begin();
 	for (size_t iPos = 0; iPos < countIntersection; ++iPos, ++itr) {
 		IntersectionPairType* pPair = &listIntersectionTarget_[iPos];
 
@@ -2588,7 +2750,9 @@ void StgCurveLaserObject::RenderOnShotManager() {
 
 		//---------------------------------------------------
 
-		size_t countPos = listPosition_.size();
+		auto& listPos = bConnect_ ? listPositionC_ : listPosition_;
+		
+		size_t countPos = listPos.size();
 		size_t countRect = countPos - 1U;
 		size_t halfPos = countRect / 2U;
 
@@ -2646,13 +2810,13 @@ void StgCurveLaserObject::RenderOnShotManager() {
 			};
 
 			bCappable = true;
-			for (auto itr = listPosition_.begin(); remLen > 0 && itr != --listPosition_.end() && bCappable; ++itr, ++i, ++iPos)
+			for (auto itr = listPos.begin(); remLen > 0 && itr != --listPos.end() && bCappable; ++itr, ++i, ++iPos)
 				bCappable = tryCap(itr);
 
 			i = 0;
 			iPos = countPos - 2; // Ends straight up do not work otherwise?
 			remLen = rcMidPt;
-			for (auto itr = listPosition_.rbegin(); remLen > 0 && itr != --listPosition_.rend() && bCappable; ++itr, ++i, --iPos)
+			for (auto itr = listPos.rbegin(); remLen > 0 && itr != --listPos.rend() && bCappable; ++itr, ++i, --iPos)
 				bCappable = tryCap(itr);
 		}
 
@@ -2660,7 +2824,34 @@ void StgCurveLaserObject::RenderOnShotManager() {
 			std::fill(arrInc.begin(), arrInc.end(), rcInc);
 
 		size_t iPos = 0U;
-		for (auto itr = listPosition_.begin(); itr != listPosition_.end(); ++itr, ++iPos) {
+		
+
+		for (auto itr = listPos.begin(); itr != listPos.end(); ++itr, ++iPos) {
+			D3DXVECTOR2 pos = itr->pos;
+			D3DXVECTOR2 vertOff[2]{ itr->vertOff[0], itr->vertOff[1] };
+
+			if (smooth_ > 0 && countPos > 1) {
+				auto itrNext = listPos.begin();
+				auto itrPrev = listPos.begin();
+				if (bConnect_) {
+					std::advance(itrNext, (iPos + smooth_) % (countPos - 1));
+					std::advance(itrPrev, (iPos - smooth_ + countPos - 1) % (countPos - 1));
+				}
+				else {
+					std::advance(itrNext, std::clamp((int)iPos + smooth_, 0, (int)countPos - 1));
+					std::advance(itrPrev, std::clamp((int)iPos - smooth_, 0, (int)countPos - 1));
+				}
+				
+				D3DXVECTOR2* posNext = &itrNext->pos;
+				D3DXVECTOR2* posPrev = &itrPrev->pos;
+
+				float arc = atan2f(posNext->y - posPrev->y, posNext->x - posPrev->x);
+
+				D3DXVECTOR2 vecNew(-sinf(arc), cosf(arc));
+				vertOff[0] = vecNew;
+				vertOff[1] = -vecNew;
+			}
+
 			float nodeAlpha = baseAlpha;
 			if (iPos > halfPos)
 				nodeAlpha = Math::Lerp::Linear(baseAlpha, tipAlpha, (iPos - halfPos + 1) / (float)halfPos);
@@ -2682,11 +2873,11 @@ void StgCurveLaserObject::RenderOnShotManager() {
 				VERTEX_TLX* pv = &verts[iVert];
 
 				_SetVertexUV(pv, ptrSrc[(iVert & 1) << 1] * texSizeInv.x, rectV);
-				_SetVertexPosition(pv, itr->pos.x + itr->vertOff[iVert].x * renderWd,
-					itr->pos.y + itr->vertOff[iVert].y * renderWd, position_.z);
+				_SetVertexPosition(pv, itr->pos.x + vertOff[iVert].x * renderWd,
+					itr->pos.y + vertOff[iVert].y * renderWd, position_.z);
 				_SetVertexColorARGB(pv, thisColor);
 			}
-			renderer->AddSquareVertex_CurveLaser(verts, std::next(itr) != listPosition_.end());
+			renderer->AddSquareVertex_CurveLaser(verts, std::next(itr) != listPos.end());
 
 			rectV += arrInc[iPos];
 		}
@@ -2743,10 +2934,11 @@ void StgCurveLaserObject::_SendDeleteEvent(int type) {
 			++countToItem;
 		};
 
-		float lengthAcc = 0.0;
-		for (std::list<LaserNode>::iterator itr = listPosition_.begin(); itr != listPosition_.end(); itr++) {
-			std::list<LaserNode>::iterator itrNext = std::next(itr);
-			if (itrNext == listPosition_.end()) break;
+	float lengthAcc = 0.0;
+	auto& listPos = bConnect_ ? listPositionC_ : listPosition_;
+	for (std::list<LaserNode>::iterator itr = listPos.begin(); itr != listPos.end(); itr++) {
+		std::list<LaserNode>::iterator itrNext = std::next(itr);
+		if (itrNext == listPos.end()) break;
 
 			D3DXVECTOR2* pos = &itr->pos;
 			D3DXVECTOR2* posNext = &itrNext->pos;
@@ -2768,8 +2960,10 @@ void StgCurveLaserObject::_SendDeleteEvent(int type) {
 //****************************************************************************
 //StgPatternShotObjectGenerator (ECL-style bullets firing)
 //****************************************************************************
-StgPatternShotObjectGenerator::StgPatternShotObjectGenerator() {
+StgPatternShotObjectGenerator::StgPatternShotObjectGenerator(StgStageController* stageController) {
+	stageController_ = stageController;
 	typeObject_ = TypeObject::ShotPattern;
+	bAutoDelete_ = false;
 
 	idShotData_ = -1;
 	typeOwner_ = StgShotObject::OWNER_ENEMY;
@@ -2791,6 +2985,8 @@ StgPatternShotObjectGenerator::StgPatternShotObjectGenerator() {
 	angleBase_ = 0;
 	angleArgument_ = 0;
 
+    extra_ = 0;
+
 	delay_ = 0;
 	//delayMove_ = false;
 
@@ -2800,9 +2996,18 @@ StgPatternShotObjectGenerator::StgPatternShotObjectGenerator() {
 StgPatternShotObjectGenerator::~StgPatternShotObjectGenerator() {
 }
 
+void StgPatternShotObjectGenerator::CleanUp() {
+	if (parent_ == nullptr && bAutoDelete_) {
+		auto objectManager = stageController_->GetMainObjectManager();
+		objectManager->DeleteObject(this);
+	}
+}
+
 void StgPatternShotObjectGenerator::CopyFrom(StgPatternShotObjectGenerator* other) {
 	parent_ = other->parent_;
+	shotParent_ = other->shotParent_;
 	listTransformation_ = other->listTransformation_;
+	bAutoDelete_ = other->bAutoDelete_;
 
 	idShotData_ = other->idShotData_;
 	//typeOwner_ = other->typeOwner_;
@@ -2912,6 +3117,8 @@ void StgPatternShotObjectGenerator::FireSet(void* scriptData, StgStageController
 		shotManager->AddShot(objShot);
 
 		if (idVector) idVector->push_back(idRes);
+
+		if (shotParent_) shotParent_->AddChild(shotParent_, objShot);
 		return true;
 	};
 

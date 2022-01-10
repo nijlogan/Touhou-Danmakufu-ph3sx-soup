@@ -827,12 +827,6 @@ ALL ARGUMENTS ARE REAL NUMBERS UNLESS STATED OTHERWISE
 			
 			prand_int(a, b) = as_int(prand(as_int(a), as_int(b) + 0.99999))
 	
-	psrand
-		Arguments:
-			1) (int) seed
-		Description:
-			Sets the seed for prand and prand_int.
-	
 	count_rand
 		Returns:
 			(int) count
@@ -2916,10 +2910,10 @@ ALL ARGUMENTS ARE REAL NUMBERS UNLESS STATED OTHERWISE
 			
 			For the full list of all charset values, refer to here:
 				https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wmf/0d0b32ac-a836-4bd2-a112-b6000a1b4fc9
-			Avoid using CHARSET_DEFAULT, as it may be device-dependent.
+			Avoid using DEFAULT_CHARSET and OEM_CHARSET, as they are device-dependent.
 			
 			To ensure that font glyphs generate correctly, match the text object's charset with the font's charset.
-			*The font charset is reset to either CHARSET_ANSI or CHARSET_SHIFTJIS every time ObjText_SetFontType is used.
+			*The font charset is reset to either ANSI_CHARSET or SHIFTJIS_CHARSET every time ObjText_SetFontType is used.
 	
 	ObjText_SetFontColorTop (Overload)
 		Arguments:
@@ -3849,14 +3843,14 @@ ALL ARGUMENTS ARE REAL NUMBERS UNLESS STATED OTHERWISE
 			
 			The node pointer is obtained with ObjCrLaser_GetNodePointer[List], do NOT pass in any other values.
 	
-	ObjCrLaser_GetNodeWidthScale
+	ObjCrLaser_GetNodeRenderWidth
 		Arguments:
 			1) (int) object ID
 			2) (pointer) node pointer
 		Returns:
 			(real) node width
 		Description:
-			Returns the render width scale of the specified node.
+			Returns the render width of the specified node.
 			
 			The node pointer is obtained with ObjCrLaser_GetNodePointer[List], do NOT pass in any other values.
 	
@@ -3903,11 +3897,11 @@ ALL ARGUMENTS ARE REAL NUMBERS UNLESS STATED OTHERWISE
 			4) node Y
 			5) node angle
 			6) (int) node hex color
-			7) =node width scale
+			7) (int) node width
 		Description:
 			Overloaded with 7 arguments.
 			
-			Additional ability to set node render width render.
+			Additional ability to set node render width.
 	
 	ObjCrLaser_SetNodePosition
 		Arguments:
@@ -3930,13 +3924,12 @@ ALL ARGUMENTS ARE REAL NUMBERS UNLESS STATED OTHERWISE
 			
 			The node pointer is obtained with ObjCrLaser_GetNodePointer[List], do NOT pass in any other values.
 	
-	ObjCrLaser_SetNodeWidthScale
+	ObjCrLaser_SetNodeRenderWidth
 		Arguments:
 			1) (int) object ID
 			2) (pointer) node pointer
-			3) node scale
 		Description:
-			Sets the render width scale of the specified node.
+			Sets the render width of the specified node.
 			
 			The node pointer is obtained with ObjCrLaser_GetNodePointer[List], do NOT pass in any other values.
 	
@@ -3967,11 +3960,11 @@ ALL ARGUMENTS ARE REAL NUMBERS UNLESS STATED OTHERWISE
 			3) node Y
 			4) node angle
 			5) (int) node hex color
-			6) node width scale
+			6) (int) node width
 		Description:
 			Overloaded with 6 arguments.
 			
-			Additional ability to specify node render width render.
+			Additional ability to specify node render width.
 	
 	--------------------------------> Shot Pattern Object Functions <--------------------------------
 	

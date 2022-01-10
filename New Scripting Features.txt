@@ -713,3 +713,4 @@
 				- op
 					
 					Changes the furigana text's side pitch.
+					
