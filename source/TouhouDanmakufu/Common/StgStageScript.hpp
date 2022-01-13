@@ -185,8 +185,6 @@ public:
 	static gstd::value Func_GetShotRenderPriorityI(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_GetPlayerRenderPriorityI(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_GetCameraFocusPermitPriorityI(gstd::script_machine* machine, int argc, const gstd::value* argv);
-	static gstd::value Func_SetItemTextureFilter(gstd::script_machine* machine, int argc, const gstd::value* argv);
-	static gstd::value Func_SetShotTextureFilter(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_CloseStgScene(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_GetReplayFps(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	DNH_FUNCAPI_DECL_(Func_SetIntersectionVisualization);
@@ -285,6 +283,7 @@ public:
 	static gstd::value Func_SetShotAutoDeleteClip(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_GetShotDataInfoA1(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	DNH_FUNCAPI_DECL_(Func_SetShotDeleteEventEnable);
+	DNH_FUNCAPI_DECL_(Func_SetShotTextureFilter);
 
 	//STG共通関数：アイテム
 	static gstd::value Func_CreateItemA1(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -303,6 +302,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_GetItemIdInCircleA1);
 	DNH_FUNCAPI_DECL_(Func_GetItemIdInCircleA2);
 	DNH_FUNCAPI_DECL_(Func_SetItemAutoDeleteClip);
+	DNH_FUNCAPI_DECL_(Func_SetItemTextureFilter);
 
 	//STG共通関数：その他
 	static gstd::value Func_StartSlow(gstd::script_machine* machine, int argc, const gstd::value* argv);
