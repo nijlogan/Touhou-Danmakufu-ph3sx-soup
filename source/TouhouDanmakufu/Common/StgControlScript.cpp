@@ -3,6 +3,8 @@
 #include "StgControlScript.hpp"
 #include "StgSystem.hpp"
 
+#include "../DnhExecutor/GcLibImpl.hpp"
+
 //*******************************************************************
 //StgControlScriptManager
 //*******************************************************************
