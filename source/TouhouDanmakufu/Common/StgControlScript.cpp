@@ -314,7 +314,7 @@ gstd::value StgControlScript::Func_AddReplayTargetVirtualKey(gstd::script_machin
 }
 gstd::value StgControlScript::Func_SetSkipModeKey(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	EFpsController* fpsController = EFpsController::GetInstance();
-	fpsController->SetFastModeKey((int16_t)argv[0].as_real());
+	fpsController->SetFastModeKey((int16_t)argv[0].as_float());
 	return value();
 }
 
@@ -421,7 +421,7 @@ gstd::value StgControlScript::Func_GetArchiveFilePathList(gstd::script_machine* 
 }
 gstd::value StgControlScript::Func_GetCurrentFps(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	EFpsController* fpsController = EFpsController::GetInstance();
-	return StgControlScript::CreateRealValue(fpsController->GetCurrentWorkFps());
+	return StgControlScript::CreateFloatValue(fpsController->GetCurrentWorkFps());
 }
 gstd::value StgControlScript::Func_GetLastFrameUpdateSpeed(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	ETaskManager* taskManager = ETaskManager::GetInstance();
@@ -485,7 +485,7 @@ gstd::value StgControlScript::Func_GetStgFrameLeft(gstd::script_machine* machine
 	if (stageController)
 		res = stageController->GetStageInformation()->GetStgFrameRect()->left;
 
-	return script->CreateRealValue(res);
+	return script->CreateFloatValue(res);
 }
 gstd::value StgControlScript::Func_GetStgFrameTop(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgControlScript* script = (StgControlScript*)machine->data;
@@ -495,7 +495,7 @@ gstd::value StgControlScript::Func_GetStgFrameTop(gstd::script_machine* machine,
 	if (stageController)
 		res = stageController->GetStageInformation()->GetStgFrameRect()->top;
 
-	return script->CreateRealValue(res);
+	return script->CreateFloatValue(res);
 }
 gstd::value StgControlScript::Func_GetStgFrameWidth(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgControlScript* script = (StgControlScript*)machine->data;
@@ -507,7 +507,7 @@ gstd::value StgControlScript::Func_GetStgFrameWidth(gstd::script_machine* machin
 		res = rect->right - rect->left;
 	}
 
-	return script->CreateRealValue(res);
+	return script->CreateFloatValue(res);
 }
 gstd::value StgControlScript::Func_GetStgFrameHeight(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgControlScript* script = (StgControlScript*)machine->data;
@@ -519,7 +519,7 @@ gstd::value StgControlScript::Func_GetStgFrameHeight(gstd::script_machine* machi
 		res = rect->bottom - rect->top;
 	}
 
-	return script->CreateRealValue(res);
+	return script->CreateFloatValue(res);
 }
 gstd::value StgControlScript::Func_GetMainPackageScriptPath(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgControlScript* script = (StgControlScript*)machine->data;
@@ -931,7 +931,7 @@ gstd::value StgControlScript::Func_GetLoadFreePlayerScriptList(gstd::script_mach
 	infoControlScript->LoadFreePlayerList();
 	std::vector<ref_count_ptr<ScriptInformation>>& listFreePlayer = infoControlScript->GetFreePlayerList();
 
-	return script->CreateRealValue(listFreePlayer.size());
+	return script->CreateFloatValue(listFreePlayer.size());
 }
 gstd::value StgControlScript::Func_GetFreePlayerScriptCount(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgControlScript* script = (StgControlScript*)machine->data;
@@ -939,7 +939,7 @@ gstd::value StgControlScript::Func_GetFreePlayerScriptCount(gstd::script_machine
 
 	std::vector<ref_count_ptr<ScriptInformation>>& listFreePlayer = infoControlScript->GetFreePlayerList();
 
-	return script->CreateRealValue(listFreePlayer.size());
+	return script->CreateFloatValue(listFreePlayer.size());
 }
 gstd::value StgControlScript::Func_GetFreePlayerScriptInfo(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgControlScript* script = (StgControlScript*)machine->data;
@@ -1036,7 +1036,7 @@ gstd::value StgControlScript::Func_GetReplayInfo(gstd::script_machine* machine, 
 		res = script->CreateIntValue(replayInfo->GetTotalScore());
 		break;
 	case REPLAY_FPS_AVERAGE:
-		res = script->CreateRealValue(replayInfo->GetAverageFps());
+		res = script->CreateFloatValue(replayInfo->GetAverageFps());
 		break;
 	case REPLAY_PLAYER_NAME:
 		res = script->CreateStringValue(replayInfo->GetPlayerScriptReplayName());
@@ -1170,11 +1170,8 @@ gstd::value StgControlScript::Func_SaveReplay(gstd::script_machine* machine, int
 //ScriptInfoPanel
 //*******************************************************************
 ScriptInfoPanel::ScriptInfoPanel() {
-	timeUpdateInterval_ = 500;
 }
 ScriptInfoPanel::~ScriptInfoPanel() {
-	Stop();
-	Join(1000);
 }
 bool ScriptInfoPanel::_AddedLogger(HWND hTab) {
 	Create(hTab);
@@ -1220,7 +1217,7 @@ bool ScriptInfoPanel::_AddedLogger(HWND hTab) {
 	wndSplitter2_.SetRatioX(0.45f);
 
 	SetWindowVisible(false);
-	Start();
+	PanelInitialize();
 
 	return true;
 }
@@ -1263,26 +1260,6 @@ void ScriptInfoPanel::LocateParts() {
 	int hScriptList = wHeight - yScriptList;
 
 	wndScript_.SetBounds(wx, yScriptList, wWidth, hScriptList);
-}
-
-void ScriptInfoPanel::_Run() {
-	while (GetStatus() == RUN) {
-		ETaskManager* taskManager = ETaskManager::GetInstance();
-		if (taskManager) {
-			bool bSystemAvailable = false;
-			std::list<shared_ptr<TaskBase>>& listTask = taskManager->GetTaskList();
-			for (auto itr = listTask.begin(); itr != listTask.end(); ++itr) {
-				StgSystemController* systemController = dynamic_cast<StgSystemController*>(itr->get());
-				if (systemController) {
-					Update(systemController);
-					bSystemAvailable = true;
-				}
-			}
-			if (!bSystemAvailable)
-				Update(nullptr);
-		}
-		Sleep(timeUpdateInterval_);
-	}
 }
 
 void ScriptInfoPanel::_TerminateScriptAll() {
@@ -1330,9 +1307,25 @@ const wchar_t* ScriptInfoPanel::GetScriptTypeName(ManagedScript* script) {
 	return L"Unknown";
 }
 
-void ScriptInfoPanel::Update(StgSystemController* systemController) {
+void ScriptInfoPanel::PanelUpdate() {
 	if (!IsWindowVisible()) return;
 
+	ETaskManager* taskManager = ETaskManager::GetInstance();
+	if (taskManager) {
+		bool bSystemAvailable = false;
+		std::list<shared_ptr<TaskBase>>& listTask = taskManager->GetTaskList();
+		for (auto itr = listTask.begin(); itr != listTask.end(); ++itr) {
+			StgSystemController* systemController = dynamic_cast<StgSystemController*>(itr->get());
+			if (systemController) {
+				Update(systemController);
+				bSystemAvailable = true;
+			}
+		}
+		if (!bSystemAvailable)
+			Update(nullptr);
+	}
+}
+void ScriptInfoPanel::Update(StgSystemController* systemController) {
 	std::vector<ScriptManager*> vecScriptManager;
 	std::list<weak_ptr<ScriptManager>> listScriptManager;
 	if (systemController)

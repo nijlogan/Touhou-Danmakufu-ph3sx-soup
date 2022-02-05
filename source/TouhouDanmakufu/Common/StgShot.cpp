@@ -964,7 +964,7 @@ void StgShotObject::_RequestPlayerDeleteEvent(int hitObjectID) {	//A super ugly 
 
 			value listScriptValue[4];
 			listScriptValue[0] = scriptPlayer->CreateIntValue(idObject_);
-			listScriptValue[1] = scriptPlayer->CreateRealArrayValue(listPos, 2U);
+			listScriptValue[1] = scriptPlayer->CreateFloatArrayValue(listPos, 2U);
 			listScriptValue[2] = scriptPlayer->CreateIntValue(GetShotDataID());
 			listScriptValue[3] = scriptPlayer->CreateIntValue(hitObjectID);
 			scriptPlayer->RequestEvent(StgStagePlayerScript::EV_DELETE_SHOT_PLAYER, listScriptValue, 4);
@@ -1350,8 +1350,8 @@ void StgShotObject::_ProcessTransformAct() {
 			double angle = transform.param[2];
 
 			double accel = transform.param[3];
-			double agvel = transform.param[4];
-			double maxsp = transform.param[5];
+			double maxsp = transform.param[4];
+			double agvel = transform.param[5];
 
 			int shotID = transform.param[6];
 			int relativeObj = transform.param[7];
@@ -1361,8 +1361,8 @@ void StgShotObject::_ProcessTransformAct() {
 			ADD_CMD(StgMovePattern_Angle::SET_SPEED, speed);
 			ADD_CMD2(StgMovePattern_Angle::SET_ANGLE, angle, Math::DegreeToRadian(angle));
 			ADD_CMD(StgMovePattern_Angle::SET_ACCEL, accel);
-			ADD_CMD2(StgMovePattern_Angle::SET_AGVEL, agvel, Math::DegreeToRadian(agvel));
 			ADD_CMD(StgMovePattern_Angle::SET_SPMAX, maxsp);
+			ADD_CMD2(StgMovePattern_Angle::SET_AGVEL, agvel, Math::DegreeToRadian(agvel));
 
 			pattern->SetShotDataID(shotID);
 			pattern->SetRelativeObject(relativeObj);
@@ -1756,7 +1756,7 @@ void StgNormalShotObject::_SendDeleteEvent(int type) {
 
 		gstd::value listScriptValue[3];
 		listScriptValue[0] = DxScript::CreateIntValue(idObject_);
-		listScriptValue[1] = DxScript::CreateRealArrayValue(pos);
+		listScriptValue[1] = DxScript::CreateFloatArrayValue(pos);
 		listScriptValue[2] = DxScript::CreateIntValue(GetShotDataID());
 		itemScript->RequestEvent(typeEvent, listScriptValue, 3);
 
@@ -2154,7 +2154,7 @@ void StgLooseLaserObject::_SendDeleteEvent(int type) {
 
 			gstd::value listScriptValue[3];
 			listScriptValue[0] = DxScript::CreateIntValue(idObject_);
-			listScriptValue[1] = DxScript::CreateRealArrayValue(pos);
+			listScriptValue[1] = DxScript::CreateFloatArrayValue(pos);
 			listScriptValue[2] = DxScript::CreateIntValue(GetShotDataID());
 			itemScript->RequestEvent(typeEvent, listScriptValue, 3);
 
@@ -2457,7 +2457,7 @@ void StgStraightLaserObject::_SendDeleteEvent(int type) {
 
 			gstd::value listScriptValue[3];
 			listScriptValue[0] = DxScript::CreateIntValue(idObject_);
-			listScriptValue[1] = DxScript::CreateRealArrayValue(pos);
+			listScriptValue[1] = DxScript::CreateFloatArrayValue(pos);
 			listScriptValue[2] = DxScript::CreateIntValue(GetShotDataID());
 			itemScript->RequestEvent(typeEvent, listScriptValue, 3);
 
@@ -2925,7 +2925,7 @@ void StgCurveLaserObject::_SendDeleteEvent(int type) {
 
 		size_t countToItem = 0U;
 		auto _RequestItem = [&](double ix, double iy) {
-			listScriptValue[1] = itemScript->CreateRealArrayValue(Math::DVec2{ ix, iy });
+			listScriptValue[1] = itemScript->CreateFloatArrayValue(Math::DVec2{ ix, iy });
 			itemScript->RequestEvent(typeEvent, listScriptValue, 3);
 
 			if (delay_.time == 0 || bEnableMotionDelay_) {
