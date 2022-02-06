@@ -272,7 +272,6 @@ static const std::vector<function> dxFunction = {
 	{ "ObjRender_SetY", DxScript::Func_ObjRender_SetY, 2 },
 	{ "ObjRender_SetZ", DxScript::Func_ObjRender_SetZ, 2 },
 	{ "ObjRender_SetPosition", DxScript::Func_ObjRender_SetPosition, 4 },
-	{ "ObjRender_SetPosition", DxScript::Func_ObjRender_SetPosition, 3 }, //Overloaded
 	{ "ObjRender_SetAngleX", DxScript::Func_ObjRender_SetAngleX, 2 },
 	{ "ObjRender_SetAngleY", DxScript::Func_ObjRender_SetAngleY, 2 },
 	{ "ObjRender_SetAngleZ", DxScript::Func_ObjRender_SetAngleZ, 2 },
@@ -345,7 +344,6 @@ static const std::vector<function> dxFunction = {
 	{ "ObjPrim_GetTexture", DxScript::Func_ObjPrimitive_GetTexture, 1 },
 	{ "ObjPrim_GetVertexCount", DxScript::Func_ObjPrimitive_GetVertexCount, 1 },
 	{ "ObjPrim_SetVertexPosition", DxScript::Func_ObjPrimitive_SetVertexPosition, 5 },
-	{ "ObjPrim_SetVertexPosition", DxScript::Func_ObjPrimitive_SetVertexPosition, 4 }, //Overloaded
 	{ "ObjPrim_SetVertexUV", DxScript::Func_ObjPrimitive_SetVertexUV, 4 },
 	{ "ObjPrim_SetVertexUVT", DxScript::Func_ObjPrimitive_SetVertexUVT, 4 },
 	{ "ObjPrim_SetVertexColor", DxScript::Func_ObjPrimitive_SetVertexColor, 5 },
@@ -394,7 +392,6 @@ static const std::vector<function> dxFunction = {
 	//Particle list object functions
 	{ "ObjParticleList_Create", DxScript::Func_ObjParticleList_Create, 1 },
 	{ "ObjParticleList_SetPosition", DxScript::Func_ObjParticleList_SetPosition, 4 },
-	{ "ObjParticleList_SetPosition", DxScript::Func_ObjParticleList_SetPosition, 3 }, //Overloaded
 	{ "ObjParticleList_SetScaleX", DxScript::Func_ObjParticleList_SetScaleSingle<0>, 2 },
 	{ "ObjParticleList_SetScaleY", DxScript::Func_ObjParticleList_SetScaleSingle<1>, 2 },
 	{ "ObjParticleList_SetScaleZ", DxScript::Func_ObjParticleList_SetScaleSingle<2>, 2 },
