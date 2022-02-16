@@ -252,6 +252,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "CloseStgScene", StgStageScript::Func_CloseStgScene, 0 },
 	{ "GetReplayFps", StgStageScript::Func_GetReplayFps, 0 },
 	{ "SetIntersectionVisualization", StgStageScript::Func_SetIntersectionVisualization, 1 },
+	{ "SetIntersectionVisualizationRenderPriority", StgStageScript::Func_SetIntersectionVisualizationRenderPriority, 1 },
 
 	//STG共通関数：自機
 	{ "GetPlayerObjectID", StgStageScript::Func_GetPlayerObjectID, 0 },
@@ -392,7 +393,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjMove_AddPatternA2", StgStageScript::Func_ObjMove_AddPatternA2, 7 },
 	{ "ObjMove_AddPatternA3", StgStageScript::Func_ObjMove_AddPatternA3, 8 },
 	{ "ObjMove_AddPatternA4", StgStageScript::Func_ObjMove_AddPatternA4, 9 },
-	{ "ObjMove_AddPatternA5", StgStageScript::Func_ObjMove_AddPatternA5, 9 },
+	{ "ObjMove_AddPatternA5", StgStageScript::Func_ObjMove_AddPatternA5, 11 },
 	{ "ObjMove_AddPatternB1", StgStageScript::Func_ObjMove_AddPatternB1, 4 },
 	{ "ObjMove_AddPatternB2", StgStageScript::Func_ObjMove_AddPatternB2, 8 },
 	{ "ObjMove_AddPatternB3", StgStageScript::Func_ObjMove_AddPatternB3, 9 },
@@ -1028,7 +1029,18 @@ gstd::value StgStageScript::Func_SetIntersectionVisualization(gstd::script_machi
 	
 	StgIntersectionManager* intersectionManager = stageController->GetIntersectionManager();
 	if (intersectionManager) {
-		intersectionManager->SetRenderIntersection(argv[0].as_boolean());
+		intersectionManager->SetEnableVisualizer(argv[0].as_boolean());
+	}
+
+	return value();
+}
+gstd::value StgStageScript::Func_SetIntersectionVisualizationRenderPriority(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	StgStageController* stageController = script->stageController_;
+
+	StgIntersectionManager* intersectionManager = stageController->GetIntersectionManager();
+	if (intersectionManager) {
+		intersectionManager->SetVisualizerRenderPriority(argv[0].as_int());
 	}
 
 	return value();
@@ -3069,7 +3081,8 @@ gstd::value StgStageScript::Func_ObjMove_SetSpeedX(gstd::script_machine* machine
 				StgMovePattern_Angle* patternAng = (StgMovePattern_Angle*)pattern.get();
 				double sx = speed;
 				double sy = pattern->GetSpeedY();
-				patternAng->SetDirectionAngle(atan2(sy, sx));
+				double ang = atan2(sy, sx);
+				patternAng->SetDirectionAngle(ang);
 				patternAng->SetSpeed(hypot(sx, sy));
 				goto lab_return;
 			}
@@ -3122,7 +3135,8 @@ gstd::value StgStageScript::Func_ObjMove_SetSpeedY(gstd::script_machine* machine
 				StgMovePattern_Angle* patternAng = (StgMovePattern_Angle*)pattern.get();
 				double sx = pattern->GetSpeedX();
 				double sy = speed;
-				patternAng->SetDirectionAngle(atan2(sy, sx));
+				double ang = atan2(sy, sx);
+				patternAng->SetDirectionAngle(ang);
 				patternAng->SetSpeed(hypot(sx, sy));
 				goto lab_return;
 			}
@@ -3174,7 +3188,8 @@ gstd::value StgStageScript::Func_ObjMove_SetSpeedXY(gstd::script_machine* machin
 			case StgMovePattern::TYPE_ANGLE:
 			{
 				StgMovePattern_Angle* patternAng = (StgMovePattern_Angle*)pattern.get();
-				patternAng->SetDirectionAngle(atan2(speedY, speedX));
+				double ang = atan2(speedY, speedX);
+				patternAng->SetDirectionAngle(ang);
 				patternAng->SetSpeed(hypot(speedX, speedY));
 				goto lab_return;
 			}
@@ -3373,6 +3388,8 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA5(gstd::script_machine* mach
 		double agvel = argv[6].as_float();
 		double agacc = argv[7].as_float();
 		double agmax = argv[8].as_float();
+		int idGraphic = argv[9].as_int();
+		int idRelative = argv[10].as_int();
 
 		ref_unsync_ptr<StgMovePattern_Angle> pattern = new StgMovePattern_Angle(obj);
 
@@ -3383,6 +3400,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA5(gstd::script_machine* mach
 		ADD_CMD2(StgMovePattern_Angle::SET_AGVEL, agvel, Math::DegreeToRadian(agvel));
 		ADD_CMD2(StgMovePattern_Angle::SET_AGACC, agacc, Math::DegreeToRadian(agacc));
 		ADD_CMD2(StgMovePattern_Angle::SET_AGMAX, agmax, Math::DegreeToRadian(agmax));
+
+		pattern->SetShotDataID(idGraphic);
+		pattern->SetRelativeObject(idRelative);
 
 		obj->AddPattern(frame, pattern);
 	}
