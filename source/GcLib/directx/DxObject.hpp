@@ -150,7 +150,7 @@ namespace directx {
 	//DxScriptShaderObject
 	//****************************************************************************
 	class DxScriptShaderObject : public DxScriptRenderObject {
-	private:
+	protected:
 		shared_ptr<Shader> shader_;
 	public:
 		DxScriptShaderObject();
