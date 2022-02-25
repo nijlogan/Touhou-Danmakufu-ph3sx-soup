@@ -8,13 +8,13 @@
 class StgShotDataList;
 class StgShotData;
 struct StgShotDataFrame;
-class StgShotVertexBuffer;
+class StgShotVertexBufferContainer;
 class StgShotObject;
 //*******************************************************************
 //StgShotManager
 //*******************************************************************
 class StgShotManager {
-	friend class StgShotVertexBuffer;
+	friend class StgShotVertexBufferContainer;
 public:
 	enum {
 		DEL_TYPE_ALL,
@@ -45,8 +45,9 @@ protected:
 	};
 protected:
 	StgStageController* stageController_;
-	StgShotDataList* listPlayerShotData_;
-	StgShotDataList* listEnemyShotData_;
+
+	unique_ptr<StgShotDataList> listPlayerShotData_;
+	unique_ptr<StgShotDataList> listEnemyShotData_;
 
 	std::list<ref_unsync_ptr<StgShotObject>> listObj_;
 	std::vector<RenderQueue> listRenderQueuePlayer_;		//one for each render pri
@@ -76,8 +77,8 @@ public:
 	ID3DXEffect* GetShotEffect() { return effectShot_; }
 	D3DXMATRIX* GetShotProjectionMatrix() { return &matProj_; }
 
-	StgShotDataList* GetPlayerShotDataList() { return listPlayerShotData_; }
-	StgShotDataList* GetEnemyShotDataList() { return listEnemyShotData_; }
+	StgShotDataList* GetPlayerShotDataList() { return listPlayerShotData_.get(); }
+	StgShotDataList* GetEnemyShotDataList() { return listEnemyShotData_.get(); }
 
 	bool LoadPlayerShotData(const std::wstring& path, bool bReload = false);
 	bool LoadEnemyShotData(const std::wstring& path, bool bReload = false);
@@ -107,17 +108,19 @@ public:
 class StgShotDataList {
 	std::set<std::wstring> listReadPath_;
 	
-	std::vector<StgShotVertexBuffer*> listVertexBuffer_;
-	std::vector<StgShotData*> listData_;
+	std::vector<unique_ptr<StgShotVertexBufferContainer>> listVertexBuffer_;
+	std::vector<unique_ptr<StgShotData>> listData_;
 
 	shared_ptr<Texture> texture_;
 	D3DXVECTOR2 textureSize_;
 
-	StgShotData* delayData_;
+	int defaultDelayData_;
 	D3DCOLOR defaultDelayColor_;
 
-	void _ScanShot(std::vector<StgShotData*>& listData, Scanner& scanner);
+	void _ScanShot(std::vector<unique_ptr<StgShotData>>& listData, Scanner& scanner);
 	static void _ScanAnimation(StgShotData*& shotData, Scanner& scanner);
+
+	void _LoadVertexBuffers(size_t countFrame);
 public:
 	StgShotDataList();
 	virtual ~StgShotDataList();
@@ -126,10 +129,9 @@ public:
 	IDirect3DTexture9* GetD3DTexture() { return texture_->GetD3DTexture(); }
 	D3DXVECTOR2& GetTextureSize() { return textureSize_; }
 
-	StgShotVertexBuffer* GetVertexBuffer(int indexVB) { return listVertexBuffer_[indexVB]; }
+	StgShotVertexBufferContainer* GetVertexBuffer(int indexVB) { return listVertexBuffer_[indexVB].get(); }
 
-	StgShotData* GetDelayData() { return delayData_; }
-	StgShotData* GetData(int id) { return (id >= 0 && id < listData_.size()) ? listData_[id] : nullptr; }
+	StgShotData* GetData(int id) { return (id >= 0 && id < listData_.size()) ? listData_[id].get() : nullptr; }
 
 	bool AddShotDataList(const std::wstring& path, bool bReload);
 };
@@ -143,6 +145,7 @@ private:
 	BlendMode typeDelayRender_;
 
 	int alpha_;
+	StgShotData* dataDelay_;
 	D3DCOLOR colorDelay_;
 
 	std::vector<StgShotDataFrame> listAnime_;
@@ -163,10 +166,11 @@ public:
 	BlendMode GetDelayRenderType() { return typeDelayRender_; }
 
 	int GetAlpha() { return alpha_; }
-	StgShotData* GetDelayData() { return listShotData_->GetDelayData(); }
+	StgShotData* GetDelayData() { return dataDelay_; }
 	D3DCOLOR GetDelayColor() { return colorDelay_; }
 
-	StgShotDataFrame* GetData(size_t frame);
+	StgShotDataFrame* GetFrame(size_t frame);
+	StgShotDataFrame* GetDelayFrame(size_t frame) { return dataDelay_ ? dataDelay_->GetFrame(frame) : nullptr; }
 	size_t GetFrameCount() { return listAnime_.size(); }
 
 	std::vector<DxCircle>& GetIntersectionCircleList() { return listCol_; }
@@ -190,7 +194,7 @@ public:
 
 	DxRect<LONG>* GetSourceRect() { return &rcSrc_; }
 	DxRect<float>* GetDestRect() { return &rcDst_; }
-	StgShotVertexBuffer* GetVertexBuffer() {
+	StgShotVertexBufferContainer* GetVertexBuffer() {
 		return vertexBufferIndex_ >= 0 ? listShotData_->GetVertexBuffer(vertexBufferIndex_) : nullptr;
 	}
 	shared_ptr<Texture> GetTexture() { return listShotData_->GetTexture(); }
@@ -200,9 +204,9 @@ public:
 };
 
 //*******************************************************************
-//StgShotVertexBuffer
+//StgShotVertexBufferContainer
 //*******************************************************************
-class StgShotVertexBuffer {
+class StgShotVertexBufferContainer {
 	friend class StgShotDataList;
 public:
 	enum {
@@ -213,8 +217,10 @@ private:
 	FixedVertexBuffer* pVertexBuffer_;
 	size_t countData_;
 public:
-	StgShotVertexBuffer();
-	~StgShotVertexBuffer();
+	StgShotVertexBufferContainer();
+	~StgShotVertexBufferContainer();
+
+	HRESULT LoadData(const std::vector<VERTEX_TLX>& data, size_t countFrame);
 
 	FixedVertexBuffer* GetBufferObject() { return pVertexBuffer_; }
 	IDirect3DVertexBuffer9* GetD3DBuffer() { return pVertexBuffer_ ? pVertexBuffer_->GetBuffer() : nullptr; }
