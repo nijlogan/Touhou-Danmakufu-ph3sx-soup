@@ -111,23 +111,16 @@ class StgShotDataList {
 	std::vector<unique_ptr<StgShotVertexBufferContainer>> listVertexBuffer_;
 	std::vector<unique_ptr<StgShotData>> listData_;
 
-	shared_ptr<Texture> texture_;
-	D3DXVECTOR2 textureSize_;
-
 	int defaultDelayData_;
 	D3DCOLOR defaultDelayColor_;
 
 	void _ScanShot(std::vector<unique_ptr<StgShotData>>& listData, Scanner& scanner);
 	static void _ScanAnimation(StgShotData*& shotData, Scanner& scanner);
 
-	void _LoadVertexBuffers(size_t countFrame);
+	void _LoadVertexBuffers(shared_ptr<Texture> texture, size_t countFrame);
 public:
 	StgShotDataList();
 	virtual ~StgShotDataList();
-
-	shared_ptr<Texture> GetTexture() { return texture_; }
-	IDirect3DTexture9* GetD3DTexture() { return texture_->GetD3DTexture(); }
-	D3DXVECTOR2& GetTextureSize() { return textureSize_; }
 
 	StgShotVertexBufferContainer* GetVertexBuffer(int indexVB) { return listVertexBuffer_[indexVB].get(); }
 
@@ -140,6 +133,8 @@ class StgShotData {
 	friend StgShotDataList;
 private:
 	StgShotDataList* listShotData_;
+
+	shared_ptr<Texture> texture_;
 
 	BlendMode typeRender_;
 	BlendMode typeDelayRender_;
@@ -162,6 +157,9 @@ public:
 
 	StgShotDataList* GetShotDataList() { return listShotData_; }
 
+	shared_ptr<Texture> GetTexture() { return texture_; }
+	IDirect3DTexture9* GetD3DTexture() { return texture_ ? texture_->GetD3DTexture() : nullptr; }
+
 	BlendMode GetRenderType() { return typeRender_; }
 	BlendMode GetDelayRenderType() { return typeDelayRender_; }
 
@@ -173,7 +171,7 @@ public:
 	StgShotDataFrame* GetDelayFrame(size_t frame) { return dataDelay_ ? dataDelay_->GetFrame(frame) : nullptr; }
 	size_t GetFrameCount() { return listAnime_.size(); }
 
-	std::vector<DxCircle>& GetIntersectionCircleList() { return listCol_; }
+	const std::vector<DxCircle>& GetIntersectionCircleList() { return listCol_; }
 
 	double GetAngularVelocityMin() { return angularVelocityMin_; }
 	double GetAngularVelocityMax() { return angularVelocityMax_; }
@@ -197,8 +195,6 @@ public:
 	StgShotVertexBufferContainer* GetVertexBuffer() {
 		return vertexBufferIndex_ >= 0 ? listShotData_->GetVertexBuffer(vertexBufferIndex_) : nullptr;
 	}
-	shared_ptr<Texture> GetTexture() { return listShotData_->GetTexture(); }
-	IDirect3DTexture9* GetD3DTexture() { return listShotData_->GetD3DTexture(); }
 
 	static DxRect<float> LoadDestRect(DxRect<LONG>* src);
 };
