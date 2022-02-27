@@ -2730,8 +2730,8 @@ void StgCurveLaserObject::Render(StgShotManager* shotManager, BlendMode targetBl
 					VERTEX_TLX* pv = &vertexData_[iPos * 2 + iVert];
 
 					_SetVertexUV(pv, ptrSrc[(iVert & 1) << 1] * texSizeInv.x, rectV);
-					_SetVertexPosition(pv, itr->pos.x + itr->vertOff[iVert].x * renderWd,
-						itr->pos.y + itr->vertOff[iVert].y * renderWd, position_.z);
+					_SetVertexPosition(pv, itr->pos.x + vertOff[iVert].x * renderWd,
+						itr->pos.y + vertOff[iVert].y * renderWd, position_.z);
 					_SetVertexColorARGB(pv, thisColor);
 				}
 
