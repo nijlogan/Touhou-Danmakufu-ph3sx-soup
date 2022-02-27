@@ -2594,8 +2594,10 @@ void StgCurveLaserObject::Render(StgShotManager* shotManager, BlendMode targetBl
 		}
 	}
 
+	auto& listPos = bConnect_ ? listPositionC_ : listPosition_;
+
 	//Render laser
-	if (listPosition_.size() > 1U) {
+	if (listPos.size() > 1U) {
 		BlendMode objBlendType = GetBlendType();
 		objBlendType = objBlendType == MODE_BLEND_NONE ? MODE_BLEND_ADD_ARGB : objBlendType;
 
