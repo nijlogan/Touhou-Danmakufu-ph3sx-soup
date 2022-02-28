@@ -1673,16 +1673,15 @@ void StgNormalShotObject::Render(BlendMode targetBlend) {
 		scaleY = scale_.y;
 		color = color_;
 
-		StgShotDataFrame* shotFrame = shotData->GetFrame(frameWork_);
-
-		float alphaRate = shotData->GetAlpha() / 255.0f;
-		if (frameFadeDelete_ >= 0)
-			alphaRate *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
 		{
+			float alphaRate = shotData->GetAlpha() / 255.0f;
+			if (frameFadeDelete_ >= 0)
+				alphaRate *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
 			byte alpha = ColorAccess::ClampColorRet(((color >> 24) & 0xff) * alphaRate);
 			color = (color & 0x00ffffff) | (alpha << 24);
 		}
 
+		StgShotDataFrame* shotFrame = shotData->GetFrame(frameWork_);
 		_Render(shotData, shotFrame);
 	}
 
@@ -2016,10 +2015,10 @@ void StgLooseLaserObject::Render(BlendMode targetBlend) {
 				rAngle = D3DXVECTOR2(dy, -dx) / currentLength_;
 
 				rColor = color_;
-				float alphaRate = shotData->GetAlpha() / 255.0f;
-				if (frameFadeDelete_ >= 0)
-					alphaRate *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
 				{
+					float alphaRate = shotData->GetAlpha() / 255.0f;
+					if (frameFadeDelete_ >= 0)
+						alphaRate *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
 					byte alpha = ColorAccess::ClampColorRet(((rColor >> 24) & 0xff) * alphaRate);
 					rColor = (rColor & 0x00ffffff) | (alpha << 24);
 				}
@@ -2233,10 +2232,10 @@ void StgStraightLaserObject::Render(BlendMode targetBlend) {
 			D3DXVECTOR2 rScale(_renderWd / rcDst->GetWidth(), _renderLn / rcDst->GetHeight());
 
 			rColor = color_;
-			float alphaRate = shotData->GetAlpha() / 255.0f;
-			if (frameFadeDelete_ >= 0)
-				alphaRate *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE_LASER, 0, 1);
 			{
+				float alphaRate = shotData->GetAlpha() / 255.0f;
+				if (frameFadeDelete_ >= 0)
+					alphaRate *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE_LASER, 0, 1);
 				byte alpha = ColorAccess::ClampColorRet(((rColor >> 24) & 0xff) * alphaRate);
 				rColor = (rColor & 0x00ffffff) | (alpha << 24);
 			}
