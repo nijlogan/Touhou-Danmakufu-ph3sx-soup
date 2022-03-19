@@ -637,7 +637,6 @@ static const std::vector<constant> dxConstant = {
 	constant("SOUND_UNKNOWN", (int)SoundFileFormat::Unknown),
 	constant("SOUND_WAVE", (int)SoundFileFormat::Wave),
 	constant("SOUND_OGG", (int)SoundFileFormat::Ogg),
-	constant("SOUND_MP3", (int)SoundFileFormat::Mp3),
 
 	//ObjSound_GetInfo info types
 	constant("INFO_FORMAT", SoundPlayer::INFO_FORMAT),
@@ -1289,29 +1288,29 @@ value DxScript::Func_SetFullscreenDisplayMatrix(gstd::script_machine* machine, i
 }
 value DxScript::Func_SetWindowedDisplayShader(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
-	DirectGraphics* graphics = DirectGraphics::GetBase();
-	DisplaySettings* pDispSettings = graphics->GetDisplaySettingsWindowed();
+	DisplaySettings* pDispSettings = DirectGraphics::GetBase()->GetDisplaySettingsWindowed();
+
+	shared_ptr<Shader> res;
 
 	int id = argv[0].as_int();
 	DxScriptRenderObject* obj = script->GetObjectPointerAs<DxScriptRenderObject>(id);
-	if (obj) {
-		pDispSettings->shader = obj->GetShader();
-	}
+	if (obj) res = obj->GetShader();
 
-	return script->CreateBooleanValue(pDispSettings->shader != nullptr);
+	pDispSettings->shader = res;
+	return script->CreateBooleanValue(res != nullptr);
 }
 value DxScript::Func_SetFullscreenDisplayShader(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
-	DirectGraphics* graphics = DirectGraphics::GetBase();
-	DisplaySettings* pDispSettings = graphics->GetDisplaySettingsFullscreen();
+	DisplaySettings* pDispSettings = DirectGraphics::GetBase()->GetDisplaySettingsFullscreen();
+
+	shared_ptr<Shader> res;
 
 	int id = argv[0].as_int();
 	DxScriptRenderObject* obj = script->GetObjectPointerAs<DxScriptRenderObject>(id);
-	if (obj) {
-		pDispSettings->shader = obj->GetShader();
-	}
+	if (obj) res = obj->GetShader();
 
-	return script->CreateBooleanValue(pDispSettings->shader != nullptr);
+	pDispSettings->shader = res;
+	return script->CreateBooleanValue(res != nullptr);
 }
 
 value DxScript::Func_LoadTexture(script_machine* machine, int argc, const value* argv) {
@@ -4337,8 +4336,7 @@ value DxScript::Func_ObjParticleList_SetColor(script_machine* machine, int argc,
 			}
 			else {
 				D3DCOLOR color = argv[1].as_int();
-				objParticle->SetInstanceColorRGB(ColorAccess::GetColorR(color), 
-					ColorAccess::GetColorG(color), ColorAccess::GetColorB(color));
+				objParticle->SetInstanceColorRGB(color);
 			}
 		}
 	}

@@ -77,11 +77,11 @@ void ELogger::UpdateCommonDataInfoPanel() {
 	panelCommonData_->Update();
 }
 void ELogger::_Run() {
-	time_ = timeGetTime();
+	time_ = SystemUtility::GetCpuTime2();
 
 	while (GetStatus() == RUN) {
-		DWORD currentTime = timeGetTime();
-		DWORD timeDelta = currentTime - time_;
+		uint64_t currentTime = SystemUtility::GetCpuTime2();
+		uint64_t timeDelta = currentTime - time_;
 
 		for (PanelData& iPanel : listPanel_) {
 			bool bUpdate = false;
@@ -123,7 +123,7 @@ bool ELogger::EAddPanel(shared_ptr<Panel> panel, const std::wstring& name, DWORD
 //*******************************************************************
 EFpsController::EFpsController() {
 	DnhConfiguration* config = DnhConfiguration::GetInstance();
-	int fpsType = config->GetFpsType();
+	int fpsType = config->fpsType_;
 	switch (fpsType) {
 	case DnhConfiguration::FPS_NORMAL:
 	case DnhConfiguration::FPS_1_2:
@@ -147,7 +147,7 @@ EFpsController::EFpsController() {
 	if (controller_ == nullptr)
 		throw gstd::wexception("Invalid refresh rate mode.");
 
-	SetFps(STANDARD_FPS);
+	SetFps(config->fpsStandard_);
 	fastModeKey_ = DIK_LCONTROL;
 }
 #endif

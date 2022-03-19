@@ -87,8 +87,8 @@ namespace directx {
 	class DirectSoundManager::SoundManageThread : public gstd::Thread, public gstd::InnerClass<DirectSoundManager> {
 		friend DirectSoundManager;
 	protected:
-		int timeCurrent_;
-		int timePrevious_;
+		uint64_t timeCurrent_;
+		uint64_t timePrevious_;
 	protected:
 		SoundManageThread(DirectSoundManager* manager);
 
@@ -110,8 +110,8 @@ namespace directx {
 		};
 	protected:
 		gstd::WListView wndListView_;
-		int timeLastUpdate_;
-		int timeUpdateInterval_;
+		uint64_t timeLastUpdate_;
+		uint64_t timeUpdateInterval_;
 
 		virtual bool _AddedLogger(HWND hTab);
 	public:
@@ -187,22 +187,6 @@ namespace directx {
 	public:
 		SoundSourceDataOgg();
 		~SoundSourceDataOgg();
-
-		virtual void Release();
-		virtual bool Load(shared_ptr<gstd::FileReader> reader);
-	};
-	class SoundSourceDataMp3 : public SoundSourceData {
-	public:
-		MPEGLAYER3WAVEFORMAT formatMp3_;
-
-		HACMSTREAM hAcmStream_;
-		ACMSTREAMHEADER acmStreamHeader_;
-
-		QWORD posMp3DataStart_;
-		QWORD posMp3DataEnd_;
-	public:
-		SoundSourceDataMp3();
-		~SoundSourceDataMp3();
 
 		virtual void Release();
 		virtual bool Load(shared_ptr<gstd::FileReader> reader);
@@ -405,25 +389,6 @@ namespace directx {
 	public:
 		SoundStreamingPlayerOgg();
 		~SoundStreamingPlayerOgg();
-
-		virtual bool Seek(double time);
-		virtual bool Seek(DWORD sample);
-	};
-
-	//*******************************************************************
-	//SoundStreamingPlayerMp3
-	//*******************************************************************
-	class SoundStreamingPlayerMp3 : public SoundStreamingPlayer {
-	protected:
-		double timeCurrent_;
-		gstd::ByteBuffer bufDecode_;	//Temp buffer containing decoded ACM stream data
-	protected:
-		virtual bool _CreateBuffer(shared_ptr<SoundSourceData> source);
-		virtual DWORD _CopyBuffer(LPVOID pMem, DWORD dwSize);
-		DWORD _DecodeAcmStream(char* pBuffer, DWORD size);
-	public:
-		SoundStreamingPlayerMp3();
-		~SoundStreamingPlayerMp3();
 
 		virtual bool Seek(double time);
 		virtual bool Seek(DWORD sample);

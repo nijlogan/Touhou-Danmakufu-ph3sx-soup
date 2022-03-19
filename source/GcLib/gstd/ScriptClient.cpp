@@ -379,7 +379,7 @@ ScriptClientBase::ScriptClientBase() {
 	//commonDataManager_.reset(new ScriptCommonDataManager());
 
 	{
-		DWORD seed = timeGetTime();
+		DWORD seed = SystemUtility::GetCpuTime2();
 
 		mt_ = std::make_shared<RandProvider>();
 		mt_->Initialize(seed ^ 0xc3c3c3c3);
@@ -2587,8 +2587,8 @@ void ScriptLoader::_AssertNewline() {
 bool ScriptLoader::_SkipToNextValidLine() {
 	Token* tok = &scanner_->GetToken();
 	while (true) {
-		if (tok->GetType() == Token::Type::TK_EOF) return false;
-		if (!scanner_->HasNext()) return false;
+		if (tok->GetType() == Token::Type::TK_EOF || !scanner_->HasNext())
+			return false;
 
 		if (tok->GetType() == Token::Type::TK_NEWLINE) {
 			tok = &scanner_->Next();
@@ -2633,6 +2633,10 @@ void ScriptLoader::Parse() {
 		src_.push_back(0);
 }
 
+static inline void _CheckEnd(const unique_ptr<Scanner>& scanner) {
+	if (!scanner->HasNext())
+		throw wexception("Unexpected EOF while parsing script.");
+}
 void ScriptLoader::_ParseInclude() {
 	while (true) {
 		bool bReread = false;
@@ -2640,18 +2644,22 @@ void ScriptLoader::_ParseInclude() {
 		if (tok->GetType() == Token::Type::TK_SHARP) {
 			size_t posBeforeDirective = scanner_->GetCurrentPointer() - charSize_;
 
+			_CheckEnd(scanner_);
 			tok = &scanner_->Next();
 			if (tok->GetType() == Token::Type::TK_ID) {
 				int directiveLine = scanner_->GetCurrentLine();
 				std::wstring directiveType = tok->GetElement();
 
 				if (directiveType == L"include") {
+					_CheckEnd(scanner_);
 					tok = &scanner_->Next();
 					std::wstring wPath = tok->GetString();
 
 					size_t posAfterInclude = scanner_->GetCurrentPointer();
 					if (scanner_->HasNext()) {
 						_AssertNewline();
+
+						_CheckEnd(scanner_);
 						scanner_->Next();
 					}
 
@@ -2789,6 +2797,7 @@ void ScriptLoader::_ParseInclude() {
 			}
 		}
 		if (bReread) {
+			if (!scanner_->HasNext()) break;
 			tok = &scanner_->Next();
 			if (tok->GetType() == Token::Type::TK_EOF) break;
 			continue;
@@ -2808,6 +2817,7 @@ void ScriptLoader::_ParseIfElse() {
 		if (tok->GetType() == Token::Type::TK_SHARP) {
 			size_t posBeforeDirective = scanner_->GetCurrentPointer() - charSize_;
 
+			_CheckEnd(scanner_);
 			tok = &scanner_->Next();
 			if (tok->GetType() == Token::Type::TK_ID) {
 				int directiveLine = scanner_->GetCurrentLine();
@@ -2818,6 +2828,7 @@ void ScriptLoader::_ParseIfElse() {
 
 					bool bIfdef = directiveType.size() == 5;
 
+					_CheckEnd(scanner_);
 					std::wstring macroName = scanner_->Next().GetElement();
 
 					if (scanner_->HasNext()) {
@@ -2853,11 +2864,14 @@ void ScriptLoader::_ParseIfElse() {
 
 					if (!scanner_->HasNext())
 						_ThrowErrorNoEndif();
+					_CheckEnd(scanner_);
 					scanner_->Next();
 					while (true) {
 						size_t _posBefore = scanner_->GetCurrentPointer() - charSize_;
 						Token& ntok = scanner_->GetToken();
 						if (ntok.GetType() == Token::Type::TK_SHARP) {
+							_CheckEnd(scanner_);
+
 							size_t posCurrent = scanner_->GetCurrentPointer();
 							std::wstring strNext = scanner_->Next().GetElement();
 
@@ -2903,6 +2917,7 @@ void ScriptLoader::_ParseIfElse() {
 			}
 		}
 		if (bReread) {
+			if (!scanner_->HasNext()) break;
 			tok = &scanner_->Next();
 			if (tok->GetType() == Token::Type::TK_EOF) break;
 			continue;

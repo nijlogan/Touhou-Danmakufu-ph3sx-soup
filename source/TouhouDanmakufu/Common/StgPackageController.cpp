@@ -21,12 +21,12 @@ void StgPackageController::Initialize() {
 	infoPackage_->SetMainScriptInformation(infoScript);
 
 	//メインスクリプト
-	std::wstring& pathMainScript = infoScript->GetScriptPath();
+	std::wstring& pathMainScript = infoScript->pathScript_;
 	ELogger::WriteTop(StringUtility::Format(L"Package script: [%s]", pathMainScript.c_str()));
 	auto idScript = scriptManager_->LoadScript(pathMainScript, StgPackageScript::TYPE_PACKAGE_MAIN);
 	scriptManager_->StartScript(idScript);
 
-	infoPackage_->SetPackageStartTime(timeGetTime());
+	infoPackage_->SetPackageStartTime(SystemUtility::GetCpuTime2());
 }
 void StgPackageController::Work() {
 	scriptManager_->Work();
