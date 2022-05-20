@@ -414,12 +414,11 @@ static const std::vector<function> dxFunction = {
 	{ "ObjPrim_SetVertexColorHSV", DxScript::Func_ObjPrimitive_SetVertexColorHSV, 5 },
 	{ "ObjPrim_SetVertexAlpha", DxScript::Func_ObjPrimitive_SetVertexAlpha, 3 },
 	{ "ObjPrim_GetVertexColor", DxScript::Func_ObjPrimitive_GetVertexColor, 2 },
-	{ "ObjPrim_GetVertexColorHex", DxScript::Func_ObjPrimitive_GetVertexColorHex, 2 },	// Overloaded
+	{ "ObjPrim_GetVertexColorHex", DxScript::Func_ObjPrimitive_GetVertexColorHex, 2 },
 	{ "ObjPrim_GetVertexAlpha", DxScript::Func_ObjPrimitive_GetVertexAlpha, 2 },
 	{ "ObjPrim_GetVertexPosition", DxScript::Func_ObjPrimitive_GetVertexPosition, 2 },
 	{ "ObjPrim_SetVertexIndex", DxScript::Func_ObjPrimitive_SetVertexIndex, 2 },
 	
-
 	//2D sprite object functions
 	{ "ObjSprite2D_SetSourceRect", DxScript::Func_ObjSprite2D_SetSourceRect, 5 },
 	{ "ObjSprite2D_SetSourceRect", DxScript::Func_ObjSprite2D_SetSourceRect, 2 },	//Overloaded
