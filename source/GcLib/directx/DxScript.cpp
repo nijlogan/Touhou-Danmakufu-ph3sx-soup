@@ -312,6 +312,8 @@ static const std::vector<function> dxFunction = {
 	{ "ObjSpring_GetPlane", DxScript::Func_ObjSpring_GetPlane, 2 },
 	{ "ObjSpring_RemovePlane", DxScript::Func_ObjSpring_RemovePlane, 2 },
 
+
+
 	//Render object functions
 	{ "ObjRender_SetX", DxScript::Func_ObjRender_SetX, 2 },
 	{ "ObjRender_SetY", DxScript::Func_ObjRender_SetY, 2 },
@@ -413,6 +415,21 @@ static const std::vector<function> dxFunction = {
 	{ "ObjPrim_GetVertexAlpha", DxScript::Func_ObjPrimitive_GetVertexAlpha, 2 },
 	{ "ObjPrim_GetVertexPosition", DxScript::Func_ObjPrimitive_GetVertexPosition, 2 },
 	{ "ObjPrim_SetVertexIndex", DxScript::Func_ObjPrimitive_SetVertexIndex, 2 },
+
+	//Sprite animation functions
+	{ "ObjSpriteAnim_StartSequence", DxScript::Func_ObjSpriteAnim_StartSequence, 4 },
+	{ "ObjSpriteAnim_StartSequence", DxScript::Func_ObjSpriteAnim_StartSequence, 3 }, // Overloaded
+	{ "ObjSpriteAnim_StartSequence", DxScript::Func_ObjSpriteAnim_StartSequence, 2 }, // Overloaded
+	{ "ObjSpriteAnim_StopSequence", DxScript::Func_ObjSpriteAnim_StopSequence, 2 },
+	{ "ObjSpriteAnim_RemoveSequence", DxScript::Func_ObjSpriteAnim_RemoveSequence, 2 },
+	{ "ObjSpriteAnim_ClearSequence", DxScript::Func_ObjSpriteAnim_ClearSequence, 1 },
+	{ "ObjSpriteAnim_GetSequenceID", DxScript::Func_ObjSpriteAnim_GetSequenceID, 1 },
+	{ "ObjSpriteAnim_AddFrame", DxScript::Func_ObjSpriteAnim_AddFrame, 7 },
+	{ "ObjSpriteAnim_AddFrame", DxScript::Func_ObjSpriteAnim_AddFrame, 4 }, // Overloaded
+	{ "ObjSpriteAnim_IsCompleteLoop", DxScript::Func_ObjSpriteAnim_IsCompleteLoop, 1 },
+	{ "ObjSpriteAnim_IsCompleteFrame", DxScript::Func_ObjSpriteAnim_IsCompleteFrame, 1 },
+	{ "ObjSpriteAnim_IsActive", DxScript::Func_ObjSpriteAnim_IsActive, 1 },
+	{ "ObjSpriteAnim_Step", DxScript::Func_ObjSpriteAnim_Step, 1 },
 	
 	//2D sprite object functions
 	{ "ObjSprite2D_SetSourceRect", DxScript::Func_ObjSprite2D_SetSourceRect, 5 },
@@ -638,6 +655,12 @@ static const std::vector<constant> dxConstant = {
 	//Camera modes
 	constant("CAMERA_NORMAL", DxCamera::MODE_NORMAL),
 	constant("CAMERA_LOOKAT", DxCamera::MODE_LOOKAT),
+
+	//Animation loop modes
+	constant("LOOP_FORWARD", DxScriptSpriteAnimation::LOOP_FORWARD),
+	constant("LOOP_BACKWARD", DxScriptSpriteAnimation::LOOP_BACKWARD),
+	constant("LOOP_FORWARD_BACKWARD", DxScriptSpriteAnimation::LOOP_FORWARD_BACKWARD),
+	constant("LOOP_BACKWARD_FORWARD", DxScriptSpriteAnimation::LOOP_BACKWARD_FORWARD),
 
 	//Primitive types
 	constant("PRIMITIVE_POINT_LIST", D3DPT_POINTLIST),
@@ -3199,6 +3222,138 @@ value DxScript::Func_ObjSpring_RemovePlane(gstd::script_machine* machine, int ar
 }
 
 
+//DxScriptAnimationObject
+value DxScript::Func_ObjSpriteAnim_RemoveSequence(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj) {
+		int idSeq = argv[1].as_int();
+		obj->RemoveSequence(idSeq);
+	}
+	return value();
+}
+value DxScript::Func_ObjSpriteAnim_ClearSequence(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj) {
+		obj->ClearSequence();
+	}
+	return value();
+}
+value DxScript::Func_ObjSpriteAnim_StartSequence(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj) {
+		int idSeq = argv[1].as_int();
+		int loopMode = (argc >= 3) ? argv[2].as_int() : DxScriptSpriteAnimation::LOOP_FORWARD;
+		int loopMax = (argc >= 4) ? argv[3].as_int() : 0;
+		obj->StartSequence(idSeq, loopMode, loopMax);
+	}
+	return value();
+}
+value DxScript::Func_ObjSpriteAnim_GetSequenceID(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	int idSeq = 0;
+
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj)
+		idSeq = obj->GetSequenceID();
+
+	return CreateIntValue(idSeq);
+}
+value DxScript::Func_ObjSpriteAnim_StopSequence(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj) {
+		obj->StopSequence();
+	}
+	return value();
+}
+static inline bool _script_check_array(script_machine* machine, const value& v, size_t size) {
+	if (!v.has_data() || v.get_type()->get_kind() != type_data::tk_array || v.length_as_array() != size) {
+		std::string err = StringUtility::Format("Incorrect value type. (Expected array of size %d)", size);
+		machine->raise_error(err);
+		return false;
+	}
+	return true;
+}
+value DxScript::Func_ObjSpriteAnim_AddFrame(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj) {
+		int idSeq = argv[1].as_int();
+		int length = argv[2].as_int();
+		DxRect<int> rect;
+		if (argc == 7) {
+			rect = DxRect<int>(argv[3].as_int(), argv[4].as_int(),
+				argv[5].as_int(), argv[6].as_int());
+		}
+		else {
+			const value& v = argv[3];
+			if (_script_check_array(machine, v, 4)) {
+				rect = DxRect<int>(v[0].as_int(), v[1].as_int(),
+					v[2].as_int(), v[3].as_int());
+			}
+		}
+		obj->AddFrame(idSeq, length, rect);
+	}
+	return value();
+}
+value DxScript::Func_ObjSpriteAnim_IsCompleteLoop(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	bool bDone = false;
+
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj)
+		bDone = obj->IsCompleteLoop();
+
+	return CreateBooleanValue(bDone);
+}
+value DxScript::Func_ObjSpriteAnim_IsCompleteFrame(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	bool bDone = false;
+
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj)
+		bDone = obj->IsCompleteFrame();
+
+	return CreateBooleanValue(bDone);
+}
+value DxScript::Func_ObjSpriteAnim_IsActive(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	bool bActive = false;
+
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj)
+		bActive = obj->IsActive();
+
+	return CreateBooleanValue(bActive);
+}
+value DxScript::Func_ObjSpriteAnim_Step(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+
+	DxScriptSpriteAnimation* obj = script->GetObjectPointerAs<DxScriptSpriteAnimation>(id);
+	if (obj) {
+		obj->Step();
+	}
+	return value();
+}
+
 //Dx関数：オブジェクト操作(RenderObject)
 value DxScript::Func_ObjRender_SetX(script_machine* machine, int argc, const value* argv) {
 	DxScript* script = (DxScript*)machine->data;
@@ -4456,14 +4611,7 @@ value DxScript::Func_ObjPrimitive_SetVertexIndex(script_machine* machine, int ar
 	return value();
 }
 
-static inline bool _script_check_array(script_machine* machine, const value& v, size_t size) {
-	if (!v.has_data() || v.get_type()->get_kind() != type_data::tk_array || v.length_as_array() != size) {
-		std::string err = StringUtility::Format("Incorrect value type. (Expected array of size %d)", size);
-		machine->raise_error(err);
-		return false;
-	}
-	return true;
-}
+
 
 //Dx関数：オブジェクト操作(Sprite2D)
 value DxScript::Func_ObjSprite2D_SetSourceRect(script_machine* machine, int argc, const value* argv) {

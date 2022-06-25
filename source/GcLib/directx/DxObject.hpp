@@ -219,7 +219,6 @@ namespace directx {
 		void Integrate();
 	};
 
-
 	//****************************************************************************
 	//DxScriptRenderObject
 	//****************************************************************************
@@ -310,6 +309,63 @@ namespace directx {
 	};
 
 	//****************************************************************************
+	//DxScriptSpriteAnimation
+	//****************************************************************************
+	class DxScriptSpriteAnimation {
+		friend DxScript;
+	public:
+
+		struct AnimationFrame {
+			size_t length;
+			DxRect<int> rect;
+		};
+
+		typedef std::vector<AnimationFrame> AnimationSequence;
+
+		enum {
+			LOOP_FORWARD,
+			LOOP_BACKWARD,
+			LOOP_FORWARD_BACKWARD,
+			LOOP_BACKWARD_FORWARD,
+		};
+	protected:
+		shared_ptr<RenderObject> pSprite_;
+		std::unordered_map<int, AnimationSequence> listSequence_;
+
+		int frame_;
+		int animFrame_;
+		int animSequence_;
+		int loopCount_;
+		int loopMax_;
+		int loopMode_;
+		int bActive_;
+	public:
+		DxScriptSpriteAnimation() {
+			this->frame_ = 0;
+			this->animFrame_ = 0;
+			this->animSequence_ = 0;
+			this->loopCount_ = 0;
+			this->loopMax_ = 0;
+			this->loopMode_ = DxScriptSpriteAnimation::LOOP_FORWARD;
+			this->bActive_ = false;
+		}
+
+		void AddFrame(int id, int length, DxRect<int>& rect);
+
+		void StartSequence(int id, int loopMode, int loopMax);
+		void StopSequence() { animSequence_ = 0; bActive_ = false; }
+		void RemoveSequence(int id);
+		void ClearSequence();
+		int GetSequenceID() { return animSequence_; }
+
+		inline bool IsCompleteLoop() { return animFrame_ == 0 && frame_ == 0; }
+		inline bool IsCompleteFrame() { return frame_ == 0; }
+		inline bool IsActive() { return bActive_; }
+
+		void Step();
+	};
+
+	//****************************************************************************
 	//DxScriptPrimitiveObject
 	//****************************************************************************
 	class DxScriptPrimitiveObject : public DxScriptRenderObject {
@@ -387,7 +443,7 @@ namespace directx {
 	//****************************************************************************
 	//DxScriptSpriteObject2D
 	//****************************************************************************
-	class DxScriptSpriteObject2D : public DxScriptPrimitiveObject2D {
+	class DxScriptSpriteObject2D : public DxScriptPrimitiveObject2D, public DxScriptSpriteAnimation {
 	public:
 		DxScriptSpriteObject2D();
 		void Copy(DxScriptSpriteObject2D* src);
@@ -439,7 +495,7 @@ namespace directx {
 	//****************************************************************************
 	//DxScriptSpriteObject3D
 	//****************************************************************************
-	class DxScriptSpriteObject3D : public DxScriptPrimitiveObject3D {
+	class DxScriptSpriteObject3D : public DxScriptPrimitiveObject3D, public DxScriptSpriteAnimation {
 	public:
 		DxScriptSpriteObject3D();
 
@@ -507,6 +563,9 @@ namespace directx {
 
 		ParticleRenderer3D* GetParticlePointer() { return (ParticleRenderer3D*)objRender_.get(); }
 	};
+
+
+
 
 	//****************************************************************************
 	//DxScriptMeshObject

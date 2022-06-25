@@ -346,26 +346,26 @@ void DxSpringMassSystemObject::Integrate() {
 				DxVector3::DxVec3Sub(v, p->pos, q->pos);
 
 				DxVector3::DxVec3 dot;
-				DxVector3::DxVec3Dot(dot, v, q->normal);
+DxVector3::DxVec3Dot(dot, v, q->normal);
 
-				double signedDist = DxVector3::DxVec3Sum(dot);
+double signedDist = DxVector3::DxVec3Sum(dot);
 
-				if (signedDist < q->epsilon) {
-					DxVector3::DxVec3 projPos;
-					DxVector3::DxVec3Copy(projPos, p->pos);
+if (signedDist < q->epsilon) {
+	DxVector3::DxVec3 projPos;
+	DxVector3::DxVec3Copy(projPos, p->pos);
 
-					DxVector3::DxVec3 projTravel;
-					DxVector3::DxVec3Scale(projTravel, q->normal, -(signedDist - q->epsilon));
-					DxVector3::DxVec3Add(projPos, projPos, projTravel);
+	DxVector3::DxVec3 projTravel;
+	DxVector3::DxVec3Scale(projTravel, q->normal, -(signedDist - q->epsilon));
+	DxVector3::DxVec3Add(projPos, projPos, projTravel);
 
-					DxSpringMassSystemObjectParticle pPlane = DxSpringMassSystemObjectParticle(projPos, DxVector3::DxVec3{ 0.0, 0.0, 0.0 }, 1.0, false);
+	DxSpringMassSystemObjectParticle pPlane = DxSpringMassSystemObjectParticle(projPos, DxVector3::DxVec3{ 0.0, 0.0, 0.0 }, 1.0, false);
 
-					// Add penalty spring force against the plane
-					DxVector3::DxVec3 springForce;
-					SpringForce(springForce, p, &pPlane, q->ks, q->kd, 0.0);
-					DxVector3::DxVec3Scale(springForce, springForce, FRAME_STEP);
-					DxVector3::DxVec3Add(p->force, p->force, springForce);
-				}
+	// Add penalty spring force against the plane
+	DxVector3::DxVec3 springForce;
+	SpringForce(springForce, p, &pPlane, q->ks, q->kd, 0.0);
+	DxVector3::DxVec3Scale(springForce, springForce, FRAME_STEP);
+	DxVector3::DxVec3Add(p->force, p->force, springForce);
+}
 			}
 		}
 	}
@@ -411,6 +411,103 @@ void DxSpringMassSystemObject::Integrate() {
 
 		if (p->bMove) {
 			DxVector3::DxVec3Add(p->pos, p->pos, p->vel);
+		}
+	}
+}
+
+//****************************************************************************
+//DxScriptSpriteAnimation
+//****************************************************************************
+
+void DxScriptSpriteAnimation::AddFrame(int id, int length, DxRect<int>& rect) {
+	if (listSequence_.count(id) == 0)
+		listSequence_[id] = AnimationSequence();
+
+	AnimationSequence& seq = listSequence_[id];
+	AnimationFrame frame;
+	frame.length = length;
+	frame.rect = rect;
+	seq.push_back(frame);
+}
+void DxScriptSpriteAnimation::StartSequence(int id, int loopMode, int loopMax) {
+	animFrame_ = 0;
+	frame_ = 0;
+	loopCount_ = 0;
+	loopMode_ = loopMode;
+	loopMax_ = loopMax;
+	animSequence_ = id;
+	if (listSequence_.count(id) > 0 && listSequence_[id].size() > 0) {
+		animSequence_ = id;
+		bActive_ = true;
+	}
+	else {
+		animSequence_ = 0;
+		bActive_ = false;
+	}	
+}
+void DxScriptSpriteAnimation::RemoveSequence(int id) {
+	if (animSequence_ == id) {
+		animSequence_ = 0;
+		bActive_ = false;
+	}
+
+	listSequence_.erase(id);
+}
+void DxScriptSpriteAnimation::ClearSequence() {
+	animSequence_ = 0;
+	bActive_ = false;
+	listSequence_.clear();
+}
+void DxScriptSpriteAnimation::Step() {
+	if (bActive_) {
+		RenderObject* targetPtr = pSprite_.get();
+		AnimationSequence& sequence = listSequence_[animSequence_];
+		int frameCount = sequence.size();
+		int frameLimit = (loopMode_ == LOOP_FORWARD_BACKWARD || loopMode_ == LOOP_BACKWARD_FORWARD) ? std::max(frameCount * 2 - 2, 0) : frameCount;
+
+		// Adjust the "real" frame index used for accessing the correct rect
+		int index = animFrame_;
+
+		// For "ping-pong" loops
+		if (index >= frameCount) {
+			index = frameLimit - animFrame_;
+		}
+
+		// For reversed loops
+		if (loopMode_ == LOOP_BACKWARD || loopMode_ == LOOP_BACKWARD_FORWARD) {
+			index = frameCount - index - 1;
+		}
+
+		AnimationFrame& frame = sequence[index];
+		int frameLength = frame.length;
+		DxRect<int>& frameRect = frame.rect;
+
+		if (Sprite2D* spr = dynamic_cast<Sprite2D*>(targetPtr)) {
+			spr->SetSourceRect(frameRect);
+		}
+		else if (Sprite3D* spr = dynamic_cast<Sprite3D*>(targetPtr)) {
+			spr->SetSourceRect(frameRect);
+		}
+
+		++frame_;
+
+		// Proceed to next animation frame
+		if (frame_ >= frameLength) {
+			frame_ = 0;
+			++animFrame_;
+
+			// Proceed to next loop
+			if (animFrame_ >= frameLimit) {
+				animFrame_ = 0;
+				++loopCount_;
+
+				// If a loop limit is set and reached, exit from the animation
+				if (loopMax_ > 0 && loopCount_ >= loopMax_) {
+					loopCount_ = 0;
+					animSequence_ = 0;
+					bActive_ = false;
+				}
+			}
 		}
 	}
 }
@@ -582,6 +679,7 @@ DxScriptSpriteObject2D::DxScriptSpriteObject2D() {
 	typeObject_ = TypeObject::Sprite2D;
 	objRender_ = std::make_shared<Sprite2D>();
 	objRender_->SetDxObjectReference(this);
+	pSprite_ = objRender_;
 }
 
 void DxScriptSpriteObject2D::Copy(DxScriptSpriteObject2D* src) {
@@ -765,6 +863,7 @@ DxScriptSpriteObject3D::DxScriptSpriteObject3D() {
 	typeObject_ = TypeObject::Sprite3D;
 	objRender_ = std::make_shared<Sprite3D>();
 	objRender_->SetDxObjectReference(this);
+	pSprite_ = objRender_;
 }
 
 //****************************************************************************
