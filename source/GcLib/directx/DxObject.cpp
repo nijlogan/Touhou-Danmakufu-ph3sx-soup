@@ -418,76 +418,84 @@ if (signedDist < q->epsilon) {
 //****************************************************************************
 //DxScriptSpriteAnimation
 //****************************************************************************
-
-void DxScriptSpriteAnimation::AddFrame(int id, int length, DxRect<int>& rect) {
-	if (listSequence_.count(id) == 0)
-		listSequence_[id] = AnimationSequence();
-
-	AnimationSequence& seq = listSequence_[id];
-	AnimationFrame frame;
-	frame.length = length;
-	frame.rect = rect;
-	seq.push_back(frame);
-}
-void DxScriptSpriteAnimation::StartSequence(int id, int loopMode, int loopMax) {
+DxScriptSpriteAnimation::DxScriptSpriteAnimation() {
+	animation_ = ANIM_INVALID;
 	animFrame_ = 0;
 	frame_ = 0;
 	loopCount_ = 0;
-	loopMode_ = loopMode;
-	loopMax_ = loopMax;
-	animSequence_ = id;
-	if (listSequence_.count(id) > 0 && listSequence_[id].size() > 0) {
-		animSequence_ = id;
+	loopMax_ = 0;
+	bReverse_ = false;
+	bActive_ = false;
+}
+void DxScriptSpriteAnimation::AddFrame(int id, int length, DxRect<int>& rect) {
+	if (id > ANIM_INVALID) {
+		if (listAnim_.count(id) == 0)
+			listAnim_[id] = AnimationSequence();
+
+		AnimationSequence& seq = listAnim_[id];
+		AnimationFrame frame;
+		frame.length = length;
+		frame.rect = rect;
+		seq.push_back(frame);
+	}
+}
+void DxScriptSpriteAnimation::Start(int id, bool bReverse, int loop) {
+	animFrame_ = 0;
+	frame_ = 0;
+	loopCount_ = 0;
+	bReverse_ = bReverse;
+	loopMax_ = loop;
+	if (listAnim_.count(id) > 0) {
+		animation_ = id;
 		bActive_ = true;
 	}
 	else {
-		animSequence_ = 0;
+		animation_ = ANIM_INVALID;
 		bActive_ = false;
 	}	
 }
-void DxScriptSpriteAnimation::RemoveSequence(int id) {
-	if (animSequence_ == id) {
-		animSequence_ = 0;
-		bActive_ = false;
-	}
-
-	listSequence_.erase(id);
-}
-void DxScriptSpriteAnimation::ClearSequence() {
-	animSequence_ = 0;
+void DxScriptSpriteAnimation::Stop() {
+	animation_ = ANIM_INVALID;
+	animFrame_ = 0;
+	frame_ = 0;
+	loopCount_ = 0;
+	loopMax_ = 0;
+	bReverse_ = false;
 	bActive_ = false;
-	listSequence_.clear();
 }
-void DxScriptSpriteAnimation::Step() {
+void DxScriptSpriteAnimation::Resume() {
+	if (animation_ > ANIM_INVALID)
+		bActive_ = true;
+}
+void DxScriptSpriteAnimation::Clear(int id) {
+	if (id > ANIM_INVALID) {
+		if (animation_ == id) Stop();
+		listAnim_.erase(id);
+	}
+}
+void DxScriptSpriteAnimation::ClearAll() {
+	if (animation_ > ANIM_INVALID)
+		Stop();
+
+	listAnim_.clear();
+}
+void DxScriptSpriteAnimation::Animate() {
 	if (bActive_) {
-		RenderObject* targetPtr = pSprite_.get();
-		AnimationSequence& sequence = listSequence_[animSequence_];
+		RenderObject* sprite = sprite_.get();
+		AnimationSequence& sequence = listAnim_[animation_];
 		int frameCount = sequence.size();
-		int frameLimit = (loopMode_ == LOOP_FORWARD_BACKWARD || loopMode_ == LOOP_BACKWARD_FORWARD) ? std::max(frameCount * 2 - 2, 0) : frameCount;
 
 		// Adjust the "real" frame index used for accessing the correct rect
-		int index = animFrame_;
-
-		// For "ping-pong" loops
-		if (index >= frameCount) {
-			index = frameLimit - animFrame_;
-		}
-
-		// For reversed loops
-		if (loopMode_ == LOOP_BACKWARD || loopMode_ == LOOP_BACKWARD_FORWARD) {
-			index = frameCount - index - 1;
-		}
+		int index = bReverse_ ? (frameCount - animFrame_ - 1) : animFrame_;
 
 		AnimationFrame& frame = sequence[index];
 		int frameLength = frame.length;
 		DxRect<int>& frameRect = frame.rect;
 
-		if (Sprite2D* spr = dynamic_cast<Sprite2D*>(targetPtr)) {
+		if (Sprite2D* spr = dynamic_cast<Sprite2D*>(sprite))
 			spr->SetSourceRect(frameRect);
-		}
-		else if (Sprite3D* spr = dynamic_cast<Sprite3D*>(targetPtr)) {
+		else if (Sprite3D* spr = dynamic_cast<Sprite3D*>(sprite))
 			spr->SetSourceRect(frameRect);
-		}
 
 		++frame_;
 
@@ -497,14 +505,12 @@ void DxScriptSpriteAnimation::Step() {
 			++animFrame_;
 
 			// Proceed to next loop
-			if (animFrame_ >= frameLimit) {
+			if (animFrame_ >= frameCount) {
 				animFrame_ = 0;
 				++loopCount_;
 
-				// If a loop limit is set and reached, exit from the animation
+				// If a loop limit is set and reached, exit from the animation and return to default if it exists
 				if (loopMax_ > 0 && loopCount_ >= loopMax_) {
-					loopCount_ = 0;
-					animSequence_ = 0;
 					bActive_ = false;
 				}
 			}
@@ -679,7 +685,12 @@ DxScriptSpriteObject2D::DxScriptSpriteObject2D() {
 	typeObject_ = TypeObject::Sprite2D;
 	objRender_ = std::make_shared<Sprite2D>();
 	objRender_->SetDxObjectReference(this);
-	pSprite_ = objRender_;
+	_AttachSpriteToAnimation(objRender_);
+}
+
+void DxScriptSpriteObject2D::Render() {
+	Animate();
+	DxScriptPrimitiveObject2D::Render();
 }
 
 void DxScriptSpriteObject2D::Copy(DxScriptSpriteObject2D* src) {
@@ -863,7 +874,12 @@ DxScriptSpriteObject3D::DxScriptSpriteObject3D() {
 	typeObject_ = TypeObject::Sprite3D;
 	objRender_ = std::make_shared<Sprite3D>();
 	objRender_->SetDxObjectReference(this);
-	pSprite_ = objRender_;
+	_AttachSpriteToAnimation(objRender_);
+}
+
+void DxScriptSpriteObject3D::Render() {
+	Animate();
+	DxScriptPrimitiveObject3D::Render();
 }
 
 //****************************************************************************

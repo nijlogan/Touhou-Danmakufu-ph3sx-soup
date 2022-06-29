@@ -401,16 +401,19 @@ namespace directx {
 		DNH_FUNCAPI_DECL_(Func_ObjPrimitive_SetVertexIndex);
 
 		//DxScriptSpriteAnimation
-		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_StartSequence);
-		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_StopSequence);
-		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_RemoveSequence);
-		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_ClearSequence);
-		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_GetSequenceID);
-		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_AddFrame);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_StartAnimation);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_PauseAnimation);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_ResumeAnimation);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_StopAnimation);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_ClearAnimation);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_ClearAllAnimation);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_GetAnimationID);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_IsReversedAnimation);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_AddAnimationFrame);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_IsCompleteAnimation);
 		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_IsCompleteLoop);
 		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_IsCompleteFrame);
-		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_IsActive);
-		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_Step);
+		DNH_FUNCAPI_DECL_(Func_ObjSpriteAnim_IsAnimating);
 		
 
 		//Dx関数：オブジェクト操作(Sprite2D)

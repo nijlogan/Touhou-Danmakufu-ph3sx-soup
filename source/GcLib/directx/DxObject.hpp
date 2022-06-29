@@ -320,49 +320,49 @@ namespace directx {
 			DxRect<int> rect;
 		};
 
-		typedef std::vector<AnimationFrame> AnimationSequence;
+		using AnimationSequence = std::vector<AnimationFrame>;
 
 		enum {
 			LOOP_FORWARD,
 			LOOP_BACKWARD,
 			LOOP_FORWARD_BACKWARD,
 			LOOP_BACKWARD_FORWARD,
+
+			ANIM_INVALID = -1
 		};
 	protected:
-		shared_ptr<RenderObject> pSprite_;
-		std::unordered_map<int, AnimationSequence> listSequence_;
+		shared_ptr<RenderObject> sprite_;
+		std::unordered_map<int, AnimationSequence> listAnim_;
 
-		int frame_;
+		int animation_;
 		int animFrame_;
-		int animSequence_;
+		int frame_;
 		int loopCount_;
 		int loopMax_;
-		int loopMode_;
-		int bActive_;
+		bool bReverse_;
+		bool bActive_;
+
+		void _AttachSpriteToAnimation(shared_ptr<RenderObject> sprite) { sprite_ = sprite; }
 	public:
-		DxScriptSpriteAnimation() {
-			this->frame_ = 0;
-			this->animFrame_ = 0;
-			this->animSequence_ = 0;
-			this->loopCount_ = 0;
-			this->loopMax_ = 0;
-			this->loopMode_ = DxScriptSpriteAnimation::LOOP_FORWARD;
-			this->bActive_ = false;
-		}
+		DxScriptSpriteAnimation();
 
 		void AddFrame(int id, int length, DxRect<int>& rect);
 
-		void StartSequence(int id, int loopMode, int loopMax);
-		void StopSequence() { animSequence_ = 0; bActive_ = false; }
-		void RemoveSequence(int id);
-		void ClearSequence();
-		int GetSequenceID() { return animSequence_; }
+		void Start(int id, bool bReverse, int loop);
+		void Pause() { bActive_ = false; }
+		void Resume();
+		void Stop();
+		void Clear(int id);
+		void ClearAll();
+		int GetID() { return animation_; }
+		bool IsReversed() { return bReverse_; }
 
+		inline bool IsComplete() { return loopCount_ == 0 && animFrame_ == 0 && frame_ == 0; }
 		inline bool IsCompleteLoop() { return animFrame_ == 0 && frame_ == 0; }
 		inline bool IsCompleteFrame() { return frame_ == 0; }
 		inline bool IsActive() { return bActive_; }
 
-		void Step();
+		void Animate();
 	};
 
 	//****************************************************************************
@@ -446,6 +446,9 @@ namespace directx {
 	class DxScriptSpriteObject2D : public DxScriptPrimitiveObject2D, public DxScriptSpriteAnimation {
 	public:
 		DxScriptSpriteObject2D();
+
+		virtual void Render();
+
 		void Copy(DxScriptSpriteObject2D* src);
 		Sprite2D* GetSpritePointer() { return dynamic_cast<Sprite2D*>(objRender_.get()); }
 	};
@@ -498,6 +501,8 @@ namespace directx {
 	class DxScriptSpriteObject3D : public DxScriptPrimitiveObject3D, public DxScriptSpriteAnimation {
 	public:
 		DxScriptSpriteObject3D();
+
+		virtual void Render();
 
 		Sprite3D* GetSpritePointer() { return dynamic_cast<Sprite3D*>(objRender_.get()); }
 	};
