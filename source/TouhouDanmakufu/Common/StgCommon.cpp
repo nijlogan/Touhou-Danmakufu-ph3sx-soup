@@ -211,11 +211,11 @@ StgMoveParent::StgMoveParent(StgStageController* stageController) {
 
 	target_ = nullptr;
 	typeAngle_ = ANGLE_FIXED;
+	argAngle_ = StgMovePattern::NO_CHANGE;
 	transOrder_ = ORDER_ANGLE_SCALE;
 	bAutoDelete_ = false;
 	bAutoDeleteChildren_ = false;
 	bMoveChild_ = true;
-	bTransNewChild_ = false;
 	bRotateLaser_ = false;
 
 	posX_ = 0;
@@ -281,11 +281,11 @@ void StgMoveParent::CopyFrom(ref_unsync_weak_ptr<StgMoveParent> self, ref_unsync
 	SetTransformAngle(other->rotZ_);
 
 	typeAngle_ = other->typeAngle_;
+	argAngle_ = other->argAngle_;
 	transOrder_ = other->transOrder_;
 	bAutoDelete_ = other->bAutoDelete_;
 	bAutoDeleteChildren_ = other->bAutoDeleteChildren_;
 	bMoveChild_ = other->bMoveChild_;
-	bTransNewChild_ = other->bTransNewChild_;
 	bRotateLaser_ = other->bRotateLaser_;
 
 	offX_ = other->offX_;
@@ -323,18 +323,7 @@ void StgMoveParent::AddChild(ref_unsync_weak_ptr<StgMoveParent> self, ref_unsync
 	}
 	child->SetParent(self);
 	listChild_.push_back(child);
-
-	if (bTransNewChild_) {
-		child->UpdateRelativePosition(false);
-		if (typeAngle_ == ANGLE_ROTATE) {
-			child->SetDirectionAngle(child->GetDirectionAngle() + rotZ_);
-			if (bRotateLaser_) {
-				StgStraightLaserObject* laser = dynamic_cast<StgStraightLaserObject*>(child.get());
-				if (laser) laser->SetLaserAngle(laser->GetLaserAngle() + rotZ_);
-			}
-		}
-	} else child->UpdateRelativePosition();
-
+	child->UpdateRelativePosition();
 }
 void StgMoveParent::RemoveChildren() {
 	if (listChild_.size() > 0) {
@@ -379,7 +368,7 @@ void StgMoveParent::SwapChildren(ref_unsync_weak_ptr<StgMoveParent> self, ref_un
 }
 void StgMoveParent::SetTransformAngle(double z) {
 	if (typeAngle_ == ANGLE_ROTATE) {
-		double diff = z - rotZ_;
+		double diff = (z - rotZ_) * argAngle_;
 		for (auto& child : listChild_) {
 			if (child) {
 				child->SetDirectionAngle(child->GetDirectionAngle() + diff);
@@ -428,13 +417,15 @@ void StgMoveParent::MoveChild(StgMoveObject* child) {
 	child->SetPositionX(x1);
 	child->SetPositionY(y1);
 
-	double dir = StgMovePattern::NO_CHANGE;
-	if (typeAngle_ == ANGLE_OUTWARD)
-		dir = atan2(y1 - pY, x1 - pX);
-	else if (typeAngle_ == ANGLE_INWARD)
-		dir = atan2(pY - y1, pX - x1);
-	
-	if (dir != StgMovePattern::NO_CHANGE) {
+	if ((typeAngle_ == ANGLE_FIXED && argAngle_ != StgMovePattern::NO_CHANGE) || typeAngle_ == ANGLE_CENTER) {
+		double dir;
+		double arg = Math::DegreeToRadian(argAngle_);
+
+		if (typeAngle_ == ANGLE_FIXED)
+			dir = arg;
+		else if (typeAngle_ == ANGLE_CENTER)
+			dir = atan2(y1 - pY, x1 - pX) + arg;
+
 		child->SetDirectionAngle(dir);
 		if (bRotateLaser_) {
 			StgStraightLaserObject* laser = dynamic_cast<StgStraightLaserObject*>(child);
@@ -484,10 +475,11 @@ void StgMoveParent::UpdateChildren() {
 			}
 			else {
 				if (target_ && typeAngle_ == ANGLE_FOLLOW) {
-					child->SetDirectionAngle(target_->GetDirectionAngle());
+					double dir = target_->GetDirectionAngle() + Math::DegreeToRadian(argAngle_);
+					child->SetDirectionAngle(dir);
 					if (bRotateLaser_) {
 						StgStraightLaserObject* laser = dynamic_cast<StgStraightLaserObject*>(child);
-						if (laser) laser->SetLaserAngle(target_->GetDirectionAngle());
+						if (laser) laser->SetLaserAngle(dir);
 					}
 				}
 				double x0 = child->posX_;
@@ -499,6 +491,7 @@ void StgMoveParent::UpdateChildren() {
 					if (child->GetSpeed() != 0) child->UpdateRelativePosition();
 				}
 
+				// Honestly, just don't use these
 				if (typeAngle_ == ANGLE_ABSOLUTE || typeAngle_ == ANGLE_RELATIVE) {
 					double x1 = child->posX_;
 					double y1 = child->posY_;
@@ -514,8 +507,8 @@ void StgMoveParent::UpdateChildren() {
 					double y = y1 - y0;
 
 					// This is to prevent, uh, angular seizures
-					if (hypot(x, y) > 0.0001) {
-						double dir = atan2(y, x);
+					if (x != 0 || y != 0) {
+						double dir = atan2(y, x) + Math::DegreeToRadian(argAngle_);
 						child->SetDirectionAngle(dir);
 						if (bRotateLaser_) {
 							StgStraightLaserObject* laser = dynamic_cast<StgStraightLaserObject*>(child);

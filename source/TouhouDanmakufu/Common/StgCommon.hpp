@@ -92,13 +92,12 @@ class StgMoveParent : public DxScriptObjectBase {
 	friend StgMoveObject;
 public:
 	enum {
-		ANGLE_FIXED,		// Angle is untouched, only changed via move pattern if applicable
-		ANGLE_ROTATE,		// Increment angle only when transform angle is changed
-		ANGLE_FOLLOW,		// Match angle to that of the target move object (same as ANGLE_FIXED if no target is set)
-		ANGLE_ABSOLUTE,		// Get absolute angle from last position
-		ANGLE_RELATIVE,		// Get angle from last position relative to base point
-		ANGLE_OUTWARD,		// Face outwards from base point
-		ANGLE_INWARD,		// Face inwards from base point
+		ANGLE_FIXED,		// Angle is untouched, only changed via move pattern if applicable (arg: specified angle; NO_CHANGE to keep current angle)
+		ANGLE_ROTATE,		// Increment angle only when transform angle is changed (arg: rotated per parent rotation degree; 1 is default)
+		ANGLE_CENTER,		// Face a specific angle from the base point (arg: degree offset)
+		ANGLE_FOLLOW,		// Match angle to that of the target move object (arg: degree offset)
+		ANGLE_ABSOLUTE,		// Get absolute angle from last position (arg: degree offset)
+		ANGLE_RELATIVE,		// Get angle from last position relative to base point (arg: degree offset)
 	};
 	enum {
 		ORDER_ANGLE_SCALE,
@@ -109,13 +108,12 @@ private:
 protected:
 	ref_unsync_weak_ptr<StgMoveObject> target_;
 	int typeAngle_;
+	double argAngle_;
 	int transOrder_;
 	bool bAutoDelete_;
 	bool bAutoDeleteChildren_;
 	bool bMoveChild_;
-	bool bTransNewChild_;
 	bool bRotateLaser_;
-	// bool bTransformMove_;
 
 	double posX_;
 	double posY_;
@@ -163,12 +161,10 @@ public:
 	double GetTransformScaleX() { return scaX_; }
 	double GetTransformScaleY() { return scaY_; }
 	double GetTransformAngle() { return rotZ_; }
-	void SetChildAngleMode(int type) { typeAngle_ = type; }
+	void SetChildAngleMode(int type, double arg) { typeAngle_ = type; argAngle_ = arg;  }
 	int GetChildAngleMode() { return typeAngle_;  }
 	void SetChildMotionEnable(bool enable) { bMoveChild_ = enable; }
 	void SetLaserRotationEnable(bool enable) { bRotateLaser_ = enable; }
-	void SetChildAdditionTransformEnable(bool enable) { bTransNewChild_ = enable; }
-	// void SetChildMotionTransformEnable(bool enable) { bTransformMove_ = enable;  }
 	void SetTransformOrder(int order) { transOrder_ = order; }
 	void ApplyTransformation();
 	void ResetTransformation() { scaX_ = 1; scaY_ = 1; rotZ_ = 0; }

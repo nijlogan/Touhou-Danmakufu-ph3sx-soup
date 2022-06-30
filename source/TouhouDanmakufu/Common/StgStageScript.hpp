@@ -375,7 +375,6 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_GetChildren);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_RemoveChildren);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_TransferChildren);
-	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SwapChildren);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetPositionOffset);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetPositionOffsetCircle);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetTransformScale);
@@ -390,8 +389,6 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_GetTransformAngle);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetChildAngleMode);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetChildMotionEnable);
-	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetChildAdditionTransformEnable);
-	// DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetChildMotionTransformEnable);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetLaserRotationEnable);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetTransformOrder);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_ApplyTransformation);
