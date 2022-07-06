@@ -258,6 +258,7 @@ static const std::vector<function> commonFunction = {
 	//Path utilities
 	{ "GetParentScriptDirectory", ScriptClientBase::Func_GetParentScriptDirectory, 0 },
 	{ "GetCurrentScriptDirectory", ScriptClientBase::Func_GetCurrentScriptDirectory, 0 },
+	{ "GetCurrentScriptPath", ScriptClientBase::Func_GetCurrentScriptPath, 0 },
 	{ "GetFilePathList", ScriptClientBase::Func_GetFilePathList, 1 },
 	{ "GetDirectoryList", ScriptClientBase::Func_GetDirectoryList, 1 },
 
@@ -2073,6 +2074,12 @@ value ScriptClientBase::Func_GetCurrentScriptDirectory(script_machine* machine, 
 	int line = machine->get_current_line();
 	const std::wstring& path = script->GetEngine()->GetScriptFileLineMap()->GetPath(line);
 	std::wstring res = PathProperty::GetFileDirectory(path);
+	return script->CreateStringValue(res);
+}
+value ScriptClientBase::Func_GetCurrentScriptPath(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	int line = machine->get_current_line();
+	std::wstring& res = script->GetEngine()->GetScriptFileLineMap()->GetPath(line);
 	return script->CreateStringValue(res);
 }
 value ScriptClientBase::Func_GetFilePathList(script_machine* machine, int argc, const value* argv) {

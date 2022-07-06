@@ -382,6 +382,7 @@ namespace gstd {
 		//Path utility
 		static value Func_GetParentScriptDirectory(script_machine* machine, int argc, const value* argv);
 		static value Func_GetCurrentScriptDirectory(script_machine* machine, int argc, const value* argv);
+		DNH_FUNCAPI_DECL_(Func_GetCurrentScriptPath);
 		static value Func_GetFilePathList(script_machine* machine, int argc, const value* argv);
 		static value Func_GetDirectoryList(script_machine* machine, int argc, const value* argv);
 
