@@ -288,17 +288,7 @@ static const std::vector<function> dxFunction = {
 	{ "ObjSpring_Step", DxScript::Func_ObjSpring_Step, 1 },
 	{ "ObjSpring_SetGravity", DxScript::Func_ObjSpring_SetGravity, 4 },
 	{ "ObjSpring_SetGlobalDrag", DxScript::Func_ObjSpring_SetGlobalDrag, 2 },
-	{ "ObjSpring_AddNode", DxScript::Func_ObjSpring_AddNode, 3 }, // x, y
-	{ "ObjSpring_AddNode", DxScript::Func_ObjSpring_AddNode, 4 }, // x, y, z
-	{ "ObjSpring_AddNode", DxScript::Func_ObjSpring_AddNode, 5 }, // x, y, vx, vy
-	{ "ObjSpring_AddNode", DxScript::Func_ObjSpring_AddNode, 7 }, // x, y, z, vx, vy, vz
-	{ "ObjSpring_AddNode", DxScript::Func_ObjSpring_AddNode, 8 }, // x, y, z, vx, vy, vz, mass
 	{ "ObjSpring_AddNode", DxScript::Func_ObjSpring_AddNode, 9 }, // x, y, z, vx, vy, vz, mass, bMove
-	{ "ObjSpring_SetNode", DxScript::Func_ObjSpring_SetNode, 4 }, // x, y
-	{ "ObjSpring_SetNode", DxScript::Func_ObjSpring_SetNode, 5 }, // x, y, z
-	{ "ObjSpring_SetNode", DxScript::Func_ObjSpring_SetNode, 6 }, // x, y, vx, vy
-	{ "ObjSpring_SetNode", DxScript::Func_ObjSpring_SetNode, 8 }, // x, y, z, vx, vy, vz
-	{ "ObjSpring_SetNode", DxScript::Func_ObjSpring_SetNode, 9 }, // x, y, z, vx, vy, vz, mass
 	{ "ObjSpring_SetNode", DxScript::Func_ObjSpring_SetNode, 10 }, // x, y, z, vx, vy, vz, mass, bMove
 	{ "ObjSpring_GetNode", DxScript::Func_ObjSpring_GetNode, 2 },
 	{ "ObjSpring_RemoveNode", DxScript::Func_ObjSpring_RemoveNode, 2 },
@@ -3001,41 +2991,11 @@ value DxScript::Func_ObjSpring_AddNode(gstd::script_machine* machine, int argc, 
 	int id = argv[0].as_int();
 	DxSpringMassSystemObject* obj = script->GetObjectPointerAs<DxSpringMassSystemObject>(id);
 	if (obj) {
-		DxSpringMassSystemObjectParticle p;
-		switch (argc) {
-		case 9:
-			p = DxSpringMassSystemObjectParticle(
-				DxVector3::DxVec3{ argv[1].as_float(), argv[2].as_float(), argv[3].as_float() },
-				DxVector3::DxVec3{ argv[4].as_float(), argv[5].as_float(), argv[6].as_float() },
-				argv[7].as_float(), argv[8].as_boolean()
-			);
-			break;
-		case 8:
-			p = DxSpringMassSystemObjectParticle(
-				DxVector3::DxVec3{ argv[1].as_float(), argv[2].as_float(), argv[3].as_float() },
-				DxVector3::DxVec3{ argv[4].as_float(), argv[5].as_float(), argv[6].as_float() },
-				argv[7].as_float()
-			);
-			break;
-		case 7:
-			p = DxSpringMassSystemObjectParticle(
-				DxVector3::DxVec3{ argv[1].as_float(), argv[2].as_float(), argv[3].as_float() },
-				DxVector3::DxVec3{ argv[4].as_float(), argv[5].as_float(), argv[6].as_float() }
-			);
-			break;
-		case 5:
-			p = DxSpringMassSystemObjectParticle(
-				DxVector3::DxVec3{ argv[1].as_float(), argv[2].as_float(), 0.0 },
-				DxVector3::DxVec3{ argv[3].as_float(), argv[4].as_float(), 0.0 }
-			);
-			break;
-		case 4:
-			p = DxSpringMassSystemObjectParticle(DxVector3::DxVec3{ argv[1].as_float(), argv[2].as_float(), argv[3].as_float() });
-			break;
-		case 3:
-			p = DxSpringMassSystemObjectParticle(DxVector3::DxVec3{ argv[1].as_float(), argv[2].as_float(), 0.0 });
-			break;
-		}
+		DxSpringMassSystemObjectParticle p = DxSpringMassSystemObjectParticle(
+			DxVector3::DxVec3{ argv[1].as_float(), argv[2].as_float(), argv[3].as_float() },
+			DxVector3::DxVec3{ argv[4].as_float(), argv[5].as_float(), argv[6].as_float() },
+			argv[7].as_float(), argv[8].as_boolean()
+		);
 		obj->AddParticle(p);
 	}
 	return value();
@@ -3046,53 +3006,11 @@ value DxScript::Func_ObjSpring_SetNode(gstd::script_machine* machine, int argc, 
 	DxSpringMassSystemObject* obj = script->GetObjectPointerAs<DxSpringMassSystemObject>(id);
 	if (obj) {
 		size_t index = argv[1].as_int();
-		DxSpringMassSystemObjectParticle p;
-		DxSpringMassSystemObjectParticle* r;
-		switch (argc) {
-		case 9:
-			p = DxSpringMassSystemObjectParticle(
-				DxVector3::DxVec3{ argv[2].as_float(), argv[3].as_float(), argv[4].as_float() },
-				DxVector3::DxVec3{ argv[5].as_float(), argv[6].as_float(), argv[7].as_float() },
-				argv[8].as_float(), argv[9].as_boolean()
-			);
-			break;
-		case 8:
-			r = &(obj->GetParticle(index));
-			p = DxSpringMassSystemObjectParticle(
-				DxVector3::DxVec3{ argv[2].as_float(), argv[3].as_float(), argv[4].as_float() },
-				DxVector3::DxVec3{ argv[5].as_float(), argv[6].as_float(), argv[7].as_float() },
-				argv[8].as_float(), r->bMove
-			);
-			break;
-		case 7:
-			r = &(obj->GetParticle(index));
-			p = DxSpringMassSystemObjectParticle(
-				DxVector3::DxVec3{ argv[2].as_float(), argv[3].as_float(), argv[4].as_float() },
-				DxVector3::DxVec3{ argv[5].as_float(), argv[6].as_float(), argv[7].as_float() },
-				r->mass, r->bMove
-			);
-			break;
-		case 5:
-			r = &(obj->GetParticle(index));
-			p = DxSpringMassSystemObjectParticle(
-				DxVector3::DxVec3{ argv[2].as_float(), argv[3].as_float(), r->pos[2] },
-				DxVector3::DxVec3{ argv[4].as_float(), argv[5].as_float(), r->vel[2] },
-				r->mass, r->bMove
-			);
-			break;
-		case 4:
-			r = &(obj->GetParticle(index));
-			p = DxSpringMassSystemObjectParticle(DxVector3::DxVec3{ argv[2].as_float(), argv[3].as_float(), argv[4].as_float() },
-				r->vel, r->mass, r->bMove
-			);
-			break;
-		case 3:
-			r = &(obj->GetParticle(index));
-			p = DxSpringMassSystemObjectParticle(DxVector3::DxVec3{ argv[2].as_float(), argv[3].as_float(), 0.0 },
-				r->vel, r->mass, r->bMove
-			);
-			break;
-		}
+		DxSpringMassSystemObjectParticle p = DxSpringMassSystemObjectParticle(
+			DxVector3::DxVec3{ argv[2].as_float(), argv[3].as_float(), argv[4].as_float() },
+			DxVector3::DxVec3{ argv[5].as_float(), argv[6].as_float(), argv[7].as_float() },
+			argv[8].as_float(), argv[9].as_boolean()
+		);
 		obj->SetParticle(p, index);
 	}
 	return value();
