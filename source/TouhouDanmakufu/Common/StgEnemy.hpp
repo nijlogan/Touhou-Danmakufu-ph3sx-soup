@@ -76,6 +76,8 @@ protected:
 	std::vector<ref_unsync_weak_ptr<StgIntersectionTarget>> ptrIntersectionToShot_;
 	std::vector<ref_unsync_weak_ptr<StgIntersectionTarget>> ptrIntersectionToPlayer_;
 
+	std::unordered_map<int, double> mapShotDamageRate_;
+
 	void _DeleteInAutoClip();
 	void _DeleteInAutoDeleteFrame();
 	virtual void _Move();
@@ -107,6 +109,11 @@ public:
 	void SetDamageRate(double rateShot, double rateSpell) { rateDamageShot_ = rateShot; rateDamageSpell_ = rateSpell; }
 	double GetShotDamageRate() { return rateDamageShot_; }
 	double GetSpellDamageRate() { return rateDamageSpell_; }
+	void SetShotDamageRateByShotDataID(int id, double rate) { mapShotDamageRate_[id] = rate; }
+	double GetShotDamageRateByShotDataID(int id) {
+		return mapShotDamageRate_.size() > 0 ? 
+			(mapShotDamageRate_.count(id) > 0 ? mapShotDamageRate_[id] : 1) : 1;
+	}
 
 	void SetMaximumDamage(double dmg) { maximumDamage_ = dmg; }
 	double GetMaximumDamage() { return maximumDamage_; }

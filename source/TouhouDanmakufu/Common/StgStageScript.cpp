@@ -460,6 +460,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjEnemy_AddLife", StgStageScript::Func_ObjEnemy_AddLife<false>, 2 },
 	{ "ObjEnemy_AddLifeEx", StgStageScript::Func_ObjEnemy_AddLife<true>, 2 },
 	{ "ObjEnemy_SetDamageRate", StgStageScript::Func_ObjEnemy_SetDamageRate, 3 },
+	{ "ObjEnemy_SetDamageRateByShotDataID", StgStageScript::Func_ObjEnemy_SetDamageRateByShotDataID, 3 },
 	{ "ObjEnemy_SetMaximumDamage", StgStageScript::Func_ObjEnemy_SetMaximumDamage, 2 },
 	{ "ObjEnemy_AddIntersectionCircleA", StgStageScript::Func_ObjEnemy_AddIntersectionCircleA, 4 },
 	{ "ObjEnemy_SetIntersectionCircleToShot", StgStageScript::Func_ObjEnemy_SetIntersectionCircleToShot, 4 },
@@ -487,6 +488,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjShot_SetAutoDelete", StgStageScript::Func_ObjShot_SetAutoDelete, 2 },
 	{ "ObjShot_FadeDelete", StgStageScript::Func_ObjShot_FadeDelete, 1 },
 	{ "ObjShot_SetDeleteFrame", StgStageScript::Func_ObjShot_SetDeleteFrame, 2 },
+	{ "ObjShot_SetFrameDeleteType", StgStageScript::Func_ObjShot_SetFrameDeleteType, 2 },
 	{ "ObjShot_SetDelay", StgStageScript::Func_ObjShot_SetDelay, 2 },
 	{ "ObjShot_SetSpellResist", StgStageScript::Func_ObjShot_SetSpellResist, 2 },
 	{ "ObjShot_SetGraphic", StgStageScript::Func_ObjShot_SetGraphic, 2 },
@@ -4236,6 +4238,17 @@ gstd::value StgStageScript::Func_ObjEnemy_SetDamageRate(gstd::script_machine* ma
 	}
 	return value();
 }
+gstd::value StgStageScript::Func_ObjEnemy_SetDamageRateByShotDataID(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	StgEnemyObject* obj = script->GetObjectPointerAs<StgEnemyObject>(id);
+	if (obj) {
+		int gr = argv[1].as_int();
+		double rate = argv[2].as_float();
+		obj->SetShotDamageRateByShotDataID(gr, rate);
+	}
+	return value();
+}
 gstd::value StgStageScript::Func_ObjEnemy_SetMaximumDamage(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
@@ -4722,6 +4735,27 @@ gstd::value StgStageScript::Func_ObjShot_SetDeleteFrame(gstd::script_machine* ma
 	if (obj) {
 		int frame = argv[1].as_int();
 		obj->SetAutoDeleteFrame(frame);
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjShot_SetFrameDeleteType(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgShotObject* obj = script->GetObjectPointerAs<StgShotObject>(id);
+	if (obj) {
+		int type = argv[1].as_int();
+		switch (type) {
+		case TYPE_IMMEDIATE:
+			type = StgShotManager::TO_TYPE_IMMEDIATE;
+			break;
+		case TYPE_FADE:
+			type = StgShotManager::TO_TYPE_FADE;
+			break;
+		case TYPE_ITEM:
+			type = StgShotManager::TO_TYPE_ITEM;
+			break;
+		}
+		obj->SetAutoDeleteType(type);
 	}
 	return value();
 }

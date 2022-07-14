@@ -405,6 +405,7 @@ public:
 	template<bool CHECK_MAX_DMG>
 	static gstd::value Func_ObjEnemy_AddLife(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjEnemy_SetDamageRate(gstd::script_machine* machine, int argc, const gstd::value* argv);
+	DNH_FUNCAPI_DECL_(Func_ObjEnemy_SetDamageRateByShotDataID);
 	DNH_FUNCAPI_DECL_(Func_ObjEnemy_SetMaximumDamage);
 	static gstd::value Func_ObjEnemy_AddIntersectionCircleA(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjEnemy_SetIntersectionCircleToShot(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -430,6 +431,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjShot_SetOwnerType);
 	static gstd::value Func_ObjShot_SetAutoDelete(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjShot_SetDeleteFrame(gstd::script_machine* machine, int argc, const gstd::value* argv);
+	DNH_FUNCAPI_DECL_(Func_ObjShot_SetFrameDeleteType);
 	static gstd::value Func_ObjShot_FadeDelete(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjShot_SetDelay(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjShot_SetSpellResist(gstd::script_machine* machine, int argc, const gstd::value* argv);
