@@ -274,6 +274,7 @@ namespace directx {
 		DNH_FUNCAPI_DECL_(Func_Obj_GetExistFrame);
 		DNH_FUNCAPI_DECL_(Func_Obj_GetParentScriptID);
 		DNH_FUNCAPI_DECL_(Func_Obj_SetParentScriptID);
+		DNH_FUNCAPI_DECL_(Func_Obj_Clone);
 
 		//DxScriptSplineObject
 		DNH_FUNCAPI_DECL_(Func_ObjSpline_Create);

@@ -44,6 +44,8 @@ namespace directx {
 		void SetObjectManager(DxScriptObjectManager* manager) { manager_ = manager; }
 		
 		virtual void Initialize() {}
+		virtual void Clone(DxScriptObjectBase* src);
+
 		virtual void Work() {}
 		virtual void Render() {}
 		virtual void SetRenderState() {}
@@ -247,6 +249,8 @@ namespace directx {
 	public:
 		DxScriptRenderObject();
 
+		virtual void Clone(DxScriptObjectBase* src);
+
 		virtual void Render() {}
 		virtual void SetRenderState() {}
 
@@ -300,6 +304,8 @@ namespace directx {
 		shared_ptr<Shader> shader_;
 	public:
 		DxScriptShaderObject();
+
+		virtual void Clone(DxScriptObjectBase* src);
 
 		virtual shared_ptr<Shader> GetShader() { return shader_; }
 		virtual void SetShader(shared_ptr<Shader> shader) { shader_ = shader; }
@@ -371,7 +377,7 @@ namespace directx {
 	class DxScriptPrimitiveObject : public DxScriptRenderObject {
 		friend DxScript;
 	protected:
-		shared_ptr<RenderObject> objRender_;
+		shared_ptr<RenderObjectPrimitive> objRender_;
 
 		D3DXVECTOR2 angX_;
 		D3DXVECTOR2 angY_;
@@ -379,8 +385,10 @@ namespace directx {
 	public:
 		DxScriptPrimitiveObject();
 
+		virtual void Clone(DxScriptObjectBase* src);
+
 		virtual DirectionalLightingState* GetLightPointer() { return objRender_->GetLighting(); }
-		RenderObject* GetObjectPointer() { return objRender_.get(); }
+		RenderObjectPrimitive* GetRenderObject() { return objRender_.get(); }
 
 		void SetPrimitiveType(D3DPRIMITIVETYPE type) { objRender_->SetPrimitiveType(type); }
 		D3DPRIMITIVETYPE GetPrimitiveType() { return objRender_->GetPrimitiveType(); }
@@ -424,7 +432,7 @@ namespace directx {
 		virtual void Render();
 		virtual void SetRenderState();
 
-		RenderObjectTLX* GetObjectPointer() { return dynamic_cast<RenderObjectTLX*>(objRender_.get()); }
+		RenderObjectTLX* GetRenderObject() { return dynamic_cast<RenderObjectTLX*>(objRender_.get()); }
 
 		virtual void SetColor(int r, int g, int b);
 		virtual void SetAlpha(int alpha);
@@ -482,7 +490,7 @@ namespace directx {
 		virtual void Render();
 		virtual void SetRenderState();
 
-		RenderObjectLX* GetObjectPointer() { return dynamic_cast<RenderObjectLX*>(objRender_.get()); }
+		RenderObjectLX* GetRenderObject() { return dynamic_cast<RenderObjectLX*>(objRender_.get()); }
 
 		virtual void SetColor(int r, int g, int b);
 		virtual void SetAlpha(int alpha);
@@ -518,7 +526,7 @@ namespace directx {
 		virtual void Render();
 		virtual void SetRenderState();
 
-		TrajectoryObject3D* GetObjectPointer() { return dynamic_cast<TrajectoryObject3D*>(objRender_.get()); }
+		TrajectoryObject3D* GetRenderObject() { return dynamic_cast<TrajectoryObject3D*>(objRender_.get()); }
 
 		virtual void SetColor(int r, int g, int b);
 		virtual void SetAlpha(int alpha) {};
@@ -589,6 +597,8 @@ namespace directx {
 	public:
 		DxScriptMeshObject();
 
+		virtual void Clone(DxScriptObjectBase* src);
+
 		virtual void Render();
 		virtual void SetRenderState();
 
@@ -619,6 +629,8 @@ namespace directx {
 		virtual void SetScaleX(float x) { scale_.x = x; }
 		virtual void SetScaleY(float y) { scale_.y = y; }
 		virtual void SetScaleZ(float z) { scale_.z = z; }
+
+		virtual shared_ptr<Shader> GetShader();
 		virtual void SetShader(shared_ptr<Shader> shader);
 	};
 
@@ -652,6 +664,8 @@ namespace directx {
 		void _UpdateRenderer();
 	public:
 		DxScriptTextObject();
+
+		virtual void Clone(DxScriptObjectBase* src);
 
 		virtual void Render();
 		virtual void SetRenderState();
@@ -739,10 +753,13 @@ namespace directx {
 		DxSoundObject();
 		~DxSoundObject();
 
+		virtual void Clone(DxScriptObjectBase* src);
+
 		virtual void Render() {}
 		virtual void SetRenderState() {}
 
 		bool Load(const std::wstring& path);
+		bool Load(shared_ptr<SoundSourceData> source);
 		void Play();
 
 		shared_ptr<SoundPlayer> GetPlayer() { return player_; }
@@ -762,10 +779,12 @@ namespace directx {
 		DxFileObject();
 		virtual ~DxFileObject();
 
-		shared_ptr<gstd::File> GetFile() { return file_; }
+		virtual void Clone(DxScriptObjectBase* src);
 
 		virtual void Render() {}
 		virtual void SetRenderState() {}
+
+		shared_ptr<gstd::File> GetFile() { return file_; }
 
 		virtual bool OpenR(const std::wstring& path);
 		virtual bool OpenR(shared_ptr<gstd::FileReader> reader);
@@ -796,6 +815,8 @@ namespace directx {
 		DxTextFileObject();
 		virtual ~DxTextFileObject();
 
+		virtual void Clone(DxScriptObjectBase* src);
+
 		virtual bool OpenR(const std::wstring& path);
 		virtual bool OpenR(shared_ptr<gstd::FileReader> reader);
 		virtual bool OpenRW(const std::wstring& path);
@@ -825,6 +846,8 @@ namespace directx {
 	public:
 		DxBinaryFileObject();
 		virtual ~DxBinaryFileObject();
+
+		virtual void Clone(DxScriptObjectBase* src);
 
 		virtual bool OpenR(const std::wstring& path);
 		virtual bool OpenR(shared_ptr<gstd::FileReader> reader);
