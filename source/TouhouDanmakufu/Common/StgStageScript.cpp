@@ -448,7 +448,6 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjMoveParent_SetTransformOrder", StgStageScript::Func_ObjMoveParent_SetTransformOrder, 2 },
 	{ "ObjMoveParent_ApplyTransformation", StgStageScript::Func_ObjMoveParent_ApplyTransformation, 1 },
 	{ "ObjMoveParent_ResetTransformation", StgStageScript::Func_ObjMoveParent_ResetTransformation, 1 },
-	{ "ObjMoveParent_CopySettings", StgStageScript::Func_ObjMoveParent_CopySettings, 2 },
 
 	//STG共通関数：敵オブジェクト操作
 	{ "ObjEnemy_Create", StgStageScript::Func_ObjEnemy_Create, 1 },
@@ -4085,19 +4084,6 @@ gstd::value StgStageScript::Func_ObjMoveParent_ResetTransformation(gstd::script_
 	if (obj)
 		obj->ResetTransformation();
 
-	return value();
-}
-gstd::value StgStageScript::Func_ObjMoveParent_CopySettings(gstd::script_machine* machine, int argc, const gstd::value* argv) {
-	StgStageScript* script = (StgStageScript*)machine->data;
-
-	int idDst = argv[0].as_int();
-	auto objDst = ref_unsync_ptr<StgMoveParent>::Cast(script->GetObject(idDst));
-	if (objDst) {
-		int idSrc = argv[1].as_int();
-		auto objSrc = ref_unsync_ptr<StgMoveParent>::Cast(script->GetObject(idSrc));
-		if (objSrc)
-			objDst->CopyFrom(objDst, objSrc);
-	}
 	return value();
 }
 

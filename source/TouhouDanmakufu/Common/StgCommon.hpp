@@ -135,12 +135,12 @@ public:
 	StgMoveParent(StgStageController* stageController);
 	~StgMoveParent();
 
+	virtual void Clone(DxScriptObjectBase* src);
+
 	virtual void Work();
 	virtual void Render() {}
 	virtual void SetRenderState() {}
 	virtual void CleanUp();
-
-	void CopyFrom(ref_unsync_weak_ptr<StgMoveParent> self, ref_unsync_weak_ptr<StgMoveParent> other);
 
 	void SetParentObject(ref_unsync_weak_ptr<StgMoveParent> self, ref_unsync_weak_ptr<StgMoveObject> parent);
 	ref_unsync_weak_ptr<StgMoveParent> GetParentObject() { return target_;  }

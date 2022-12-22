@@ -69,6 +69,8 @@ value DxScript::Func_Obj_Clone(script_machine* machine, int argc, const value* a
 				DEF_CASE(TypeObject::StraightLaser, StgStraightLaserObject);
 				DEF_CASE(TypeObject::CurveLaser, StgCurveLaserObject);
 				DEF_CASE(TypeObject::ShotPattern, StgShotPatternGeneratorObject);
+
+				DEF_CASE(TypeObject::MoveParent, StgMoveParent);
 			
 			case TypeObject::Item:
 			{

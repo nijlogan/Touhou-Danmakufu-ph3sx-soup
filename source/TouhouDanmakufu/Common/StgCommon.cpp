@@ -271,6 +271,30 @@ StgMoveParent::~StgMoveParent() {
 	}
 	target_ = nullptr;
 }
+void StgMoveParent::Clone(DxScriptObjectBase* _src) {
+	DxScriptObjectBase::Clone(_src);
+
+	auto src = (StgMoveParent*)_src;
+
+	SetParentObject(ref_unsync_ptr<StgShotObject>::Cast(stageController_->GetMainRenderObject(idObject_)), src->target_); // ew
+	SetTransformAngle(src->rotZ_);
+
+	typeAngle_ = src->typeAngle_;
+	argAngle_ = src->argAngle_;
+	transOrder_ = src->transOrder_;
+	bAutoDelete_ = src->bAutoDelete_;
+	bAutoDeleteChildren_ = src->bAutoDeleteChildren_;
+	bMoveChild_ = src->bMoveChild_;
+	bRotateLaser_ = src->bRotateLaser_;
+
+	offX_ = src->offX_;
+	offY_ = src->offY_;
+	scaX_ = src->scaX_;
+	scaY_ = src->scaY_;
+	wvlZ_ = src->wvlZ_;
+	accZ_ = src->accZ_;
+	maxZ_ = src->maxZ_;
+}
 void StgMoveParent::Work() {
 	if (target_ != nullptr || bAutoDelete_) return;
 	
@@ -304,26 +328,6 @@ void StgMoveParent::CleanUp() {
 				++iter;
 		}
 	}
-}
-void StgMoveParent::CopyFrom(ref_unsync_weak_ptr<StgMoveParent> self, ref_unsync_weak_ptr<StgMoveParent> other) {
-	SetParentObject(self, other->target_);
-	SetTransformAngle(other->rotZ_);
-
-	typeAngle_ = other->typeAngle_;
-	argAngle_ = other->argAngle_;
-	transOrder_ = other->transOrder_;
-	bAutoDelete_ = other->bAutoDelete_;
-	bAutoDeleteChildren_ = other->bAutoDeleteChildren_;
-	bMoveChild_ = other->bMoveChild_;
-	bRotateLaser_ = other->bRotateLaser_;
-
-	offX_ = other->offX_;
-	offY_ = other->offY_;
-	scaX_ = other->scaX_;
-	scaY_ = other->scaY_;
-	wvlZ_ = other->wvlZ_;
-	accZ_ = other->accZ_;
-	maxZ_ = other->maxZ_;
 }
 void StgMoveParent::SetParentObject(ref_unsync_weak_ptr<StgMoveParent> self, ref_unsync_weak_ptr<StgMoveObject> parent) {
 	if (target_ == parent) return; // Exit if target is the same
