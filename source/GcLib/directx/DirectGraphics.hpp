@@ -84,6 +84,7 @@ namespace directx {
 		void AddDirectGraphicsListener(DirectGraphicsListener* listener);
 		void RemoveDirectGraphicsListener(DirectGraphicsListener* listener);
 
+		IDirect3D9* GetDirect3D() { return pDirect3D_; }
 		IDirect3DDevice9* GetDevice() { return pDevice_; }
 		IDirect3DSurface9* GetBaseSurface() { return pBackSurf_; }
 		IDirect3DSurface9* GetZBufferSurface() { return pZBuffer_; }
@@ -119,7 +120,7 @@ namespace directx {
 	protected:
 		ScreenMode modeScreen_;
 
-		std::map<D3DMULTISAMPLE_TYPE, std::pair<bool, DWORD*>> mapSupportMultisamples_;
+		std::map<D3DMULTISAMPLE_TYPE, std::array<bool, 2>> mapSupportMultisamples_;
 
 		bool bMainRender_;
 		bool bAllowRenderTargetChange_;
@@ -229,10 +230,8 @@ namespace directx {
 		void SetDirectionalLight(D3DVECTOR& dir);
 		void SetMultiSampleType(D3DMULTISAMPLE_TYPE type);
 		D3DMULTISAMPLE_TYPE GetMultiSampleType();
-		void SetMultiSampleQuality(DWORD* quality);
-		DWORD* GetMultiSampleQuality();
 		HRESULT SetAntiAliasing(bool bEnable);
-		bool IsSupportMultiSample(D3DMULTISAMPLE_TYPE type);
+		bool IsSupportMultiSample(D3DMULTISAMPLE_TYPE type, bool bWindowed);
 
 		//because D3DXMatrixOrthoOffCenterRH is broken for some reason
 		static D3DXMATRIX CreateOrthographicProjectionMatrix(float x, float y, float width, float height);

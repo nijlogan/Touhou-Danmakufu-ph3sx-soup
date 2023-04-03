@@ -83,6 +83,65 @@ void SystemUtility::TestCpuSupportSIMD() {
 #endif
 }
 
+std::wstring SystemUtility::GetSystemFontFilePath(const std::wstring& faceName) {
+	static const LPWSTR fontRegistryPath = L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
+
+	HKEY hKey;
+
+	LONG result = ::RegOpenKeyExW(HKEY_LOCAL_MACHINE, fontRegistryPath, 0, KEY_READ, &hKey);
+	if (result != ERROR_SUCCESS)
+		return L"";
+
+	DWORD maxValueNameSize, maxValueDataSize;
+	result = ::RegQueryInfoKeyW(hKey, 0, 0, 0, 0, 0, 0, 0, &maxValueNameSize, &maxValueDataSize, 0, 0);
+	if (result != ERROR_SUCCESS)
+		return L"";
+
+	std::wstring wsFontFile;
+	{
+		DWORD valueIndex = 0;
+		DWORD valueNameSize, valueDataSize, valueType;
+
+		std::wstring valueName;
+		valueName.resize(maxValueNameSize);
+
+		std::vector<byte> valueData(maxValueDataSize);
+
+		do {
+			wsFontFile.clear();
+			valueDataSize = maxValueDataSize;
+			valueNameSize = maxValueNameSize;
+
+			result = ::RegEnumValueW(hKey, valueIndex, (LPWSTR)valueName.c_str(), &valueNameSize,
+				0, &valueType, (LPBYTE)valueData.data(), &valueDataSize);
+			valueIndex++;
+			if (result != ERROR_SUCCESS || valueType != REG_SZ)
+				continue;
+
+			// Found a match
+			if (valueName.find(faceName) != std::wstring::npos) {
+				//if (_wcsnicmp(faceName.c_str(), valueName.c_str(), faceName.length()) == 0) {
+				wsFontFile.assign((LPWSTR)valueData.data(), valueDataSize);
+				break;
+			}
+		} while (result != ERROR_NO_MORE_ITEMS);
+	}
+
+	::RegCloseKey(hKey);
+
+	if (wsFontFile.empty())
+		return L"";
+
+	WCHAR winDir[MAX_PATH];
+	::GetWindowsDirectoryW(winDir, MAX_PATH);
+
+	std::wstringstream ss;
+	ss << winDir << "\\Fonts\\" << wsFontFile;
+	wsFontFile = ss.str();
+
+	return std::wstring(wsFontFile.begin(), wsFontFile.end());
+}
+
 //*******************************************************************
 //AnyMap
 //*******************************************************************
@@ -514,6 +573,29 @@ std::string StringUtility::Trim(const std::string& str) {
 	return res;
 }
 
+template<class _Iter>
+std::string StringUtility::Join(_Iter begin, _Iter end, const std::string& join) {
+	std::string res;
+	size_t i = 0;
+	for (auto itr = begin; itr != end; ++i) {
+		res += *itr;
+		if ((++itr) != end)
+			res += join;
+	}
+	return res;
+}
+std::string StringUtility::Join(const std::vector<std::string>& strs, const std::string& join) {
+	return Join(strs.begin(), strs.end(), join);
+}
+
+std::string StringUtility::FromGuid(const GUID* guid) {
+	return Format(
+		"{%08x-%04x-%04x-%04x-%04x%08x}",
+		guid->Data1, guid->Data2, guid->Data3,
+		((uint16_t*)guid->Data4)[0], ((uint16_t*)guid->Data4)[1],
+		((uint32_t*)guid->Data4)[1]);
+}
+
 //----------------------------------------------------------------
 
 std::vector<std::wstring> StringUtility::Split(const std::wstring& str, const std::wstring& delim) {
@@ -630,6 +712,22 @@ std::wstring StringUtility::Trim(const std::wstring& str) {
 
 	return res;
 }
+
+template<class _Iter>
+std::wstring StringUtility::Join(_Iter begin, _Iter end, const std::wstring& join) {
+	std::wstring res;
+	size_t i = 0;
+	for (auto itr = begin; itr != end; ++i) {
+		res += *itr;
+		if ((++itr) != end)
+			res += join;
+	}
+	return res;
+}
+std::wstring StringUtility::Join(const std::vector<std::wstring>& strs, const std::wstring& join) {
+	return Join(strs.begin(), strs.end(), join);
+}
+
 size_t StringUtility::CountAsciiSizeCharacter(const std::wstring& str) {
 	if (str.size() == 0) return 0;
 
@@ -1035,7 +1133,9 @@ void Scanner::_SkipSpace() {
 
 Token& Scanner::Next() {
 	if (!HasNext()) {
-		_RaiseError(L"Scanner::Next: End-of-file already reached.");
+		//_RaiseError(L"Scanner::Next: End-of-file already reached.");
+		token_ = Token(Token::Type::TK_EOF, L"", -1, -1);
+		return token_;
 	}
 
 	_SkipComment();

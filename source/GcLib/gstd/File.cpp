@@ -108,6 +108,7 @@ void ByteBuffer::Seek(size_t pos) {
 	if (offset_ > size_) offset_ = size_;
 }
 DWORD ByteBuffer::Write(LPVOID buf, DWORD size) {
+	if (size == 0) return 0;
 	if (offset_ + size > reserve_) {
 		SetSize(offset_ + size);
 	}
@@ -118,7 +119,7 @@ DWORD ByteBuffer::Write(LPVOID buf, DWORD size) {
 	return size;
 }
 DWORD ByteBuffer::Read(LPVOID buf, DWORD size) {
-	if (offset_ >= size_) return 0;
+	if (offset_ >= size_ || size == 0) return 0;
 	size_t readable = std::min<size_t>(size, size_ - offset_);
 	memcpy(buf, &data_[offset_], readable);
 	offset_ += readable;
@@ -252,6 +253,7 @@ std::vector<std::wstring> File::GetFilePathList(const std::wstring& dir, bool bS
 	FindClose(hFind);
 #endif
 
+#if defined(DNH_PROJ_EXECUTOR)
 	if (bSearchArchive) {
 		std::wstring moduleDir = PathProperty::GetModuleDirectory();
 		std::wstring dirUnique = PathProperty::GetUnique(dir);
@@ -260,6 +262,7 @@ std::vector<std::wstring> File::GetFilePathList(const std::wstring& dir, bool bS
 			res.insert(moduleDir + iEntry->fullPath);
 		}
 	}
+#endif
 
 	return std::vector<std::wstring>(res.begin(), res.end());
 }
@@ -301,6 +304,7 @@ std::vector<std::wstring> File::GetDirectoryPathList(const std::wstring& dir, bo
 	FindClose(hFind);
 #endif
 
+#if defined(DNH_PROJ_EXECUTOR)
 	if (bSearchArchive) {
 		std::wstring moduleDir = PathProperty::GetModuleDirectory();
 		std::wstring dirUnique = PathProperty::GetUnique(dir);
@@ -310,6 +314,7 @@ std::vector<std::wstring> File::GetDirectoryPathList(const std::wstring& dir, bo
 			res.insert(dir);
 		}
 	}
+#endif
 
 	return std::vector<std::wstring>(res.begin(), res.end());
 }
